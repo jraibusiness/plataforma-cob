@@ -1570,29 +1570,34 @@ const FUNCOES = {
 
 // Campos específicos por categoria (etapa 9) — conforme formulários oficiais do COB
 // label/ph/opts são chaves i18n, resolvidas em renderDetails()/renderReview() via t()
+// Tipos: 'choice' (botões, seleção única; suporta other:true p/ campo livre),
+// 'text', 'textarea', 'date', 'select' (lista suspensa — usado p/ Estado/UF).
+// Campos 'choice' avançam automaticamente após a escolha (menos toques).
+const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO','Exterior'];
+
 const DETAILS_FIELDS = {
   voluntario: [
-    {id:'area_atuacao',     labelKey:'d_area_atuacao',     type:'text',   req:true,  phKey:'d_area_atuacao_ph'},
+    {id:'area_atuacao',     labelKey:'d_area_atuacao',     type:'choice', req:true,  other:true, optsKey:['opt_area_com','opt_area_arq','opt_area_gest','opt_area_pesq','opt_area_design','opt_outro']},
+    {id:'carga_horaria',    labelKey:'d_carga_horaria',    type:'choice', req:true,  optsKey:['opt_carga_2','opt_carga_24','opt_carga_46','opt_carga_6']},
     {id:'tel_recado',       labelKey:'d_tel_recado',       type:'text',   req:true,  phKey:'d_tel_recado_ph'},
-    {id:'carga_horaria',    labelKey:'d_carga_horaria',    type:'text',   req:true,  phKey:'d_carga_horaria_ph'},
     {id:'apelido',          labelKey:'d_apelido',          type:'text',   req:false, phKey:'d_opcional'},
-    {id:'aniversario',      labelKey:'d_aniversario',      type:'radio',  req:true,  optsKey:['opt_sim','opt_nao']},
-    {id:'data_aniversario', labelKey:'d_data_aniversario', type:'text',   req:false, phKey:'d_data_ph'},
-    {id:'mencionar_aniv',   labelKey:'d_mencionar_aniv',   type:'radio',  req:false, optsKey:['opt_sim','opt_nao']}
+    {id:'aniversario',      labelKey:'d_aniversario',      type:'choice', req:true,  optsKey:['opt_sim','opt_nao']},
+    {id:'data_aniversario', labelKey:'d_data_aniversario', type:'date',   req:false},
+    {id:'mencionar_aniv',   labelKey:'d_mencionar_aniv',   type:'choice', req:false, optsKey:['opt_sim','opt_nao']}
   ],
   embaixador: [
     {id:'orquestra',        labelKey:'d_orquestra_emb',    type:'text',   req:true},
     {id:'funcao_emb',       labelKey:'d_funcao_emb',       type:'text',   req:true},
     {id:'apelido',          labelKey:'d_apelido',          type:'text',   req:false, phKey:'d_opcional'},
-    {id:'aniversario',      labelKey:'d_aniversario',      type:'radio',  req:true,  optsKey:['opt_sim','opt_nao']},
-    {id:'data_aniversario', labelKey:'d_data_aniversario', type:'text',   req:false, phKey:'d_data_ph'},
-    {id:'parabenizar',      labelKey:'d_parabenizar',      type:'radio',  req:false, optsKey:['opt_sim','opt_nao']}
+    {id:'aniversario',      labelKey:'d_aniversario',      type:'choice', req:true,  optsKey:['opt_sim','opt_nao']},
+    {id:'data_aniversario', labelKey:'d_data_aniversario', type:'date',   req:false},
+    {id:'parabenizar',      labelKey:'d_parabenizar',      type:'choice', req:false, optsKey:['opt_sim','opt_nao']}
   ],
   representante: [
     {id:'cidade',     labelKey:'d_cidade',  type:'text', req:true},
-    {id:'estado',     labelKey:'d_estado',  type:'text', req:true},
-    {id:'raca',       labelKey:'d_raca',    type:'select', req:true, optsKey:['opt_amarela','opt_branca','opt_indigena','opt_negra','opt_parda','opt_prefiro_nao','opt_outro']},
-    {id:'genero',     labelKey:'d_genero',  type:'select', req:true, optsKey:['opt_mulher_cis','opt_homem_cis','opt_mulher_trans','opt_homem_trans','opt_nao_binaria','opt_prefiro_nao','opt_outro']},
+    {id:'estado',     labelKey:'d_estado',  type:'select', req:true, opts:UFS},
+    {id:'raca',       labelKey:'d_raca',    type:'choice', req:true, other:true, optsKey:['opt_amarela','opt_branca','opt_indigena','opt_negra','opt_parda','opt_prefiro_nao','opt_outro']},
+    {id:'genero',     labelKey:'d_genero',  type:'choice', req:true, other:true, optsKey:['opt_mulher_cis','opt_homem_cis','opt_mulher_trans','opt_homem_trans','opt_nao_binaria','opt_prefiro_nao','opt_outro']},
     {id:'rede_social',labelKey:'d_rede_social', type:'text', req:false, phKey:'d_opcional'},
     {id:'formacao',   labelKey:'d_formacao', type:'text', req:false},
     {id:'orquestra',  labelKey:'d_orquestra_rep', type:'text', req:true},
@@ -1600,9 +1605,26 @@ const DETAILS_FIELDS = {
     {id:'apelido',    labelKey:'d_apelido_rep', type:'text', req:false, phKey:'d_opcional'},
     {id:'experiencia',labelKey:'d_experiencia', type:'textarea', req:true},
     {id:'dores',      labelKey:'d_dores',   type:'textarea', req:true, phKey:'d_dores_ph'},
-    {id:'palestrar',  labelKey:'d_palestrar', type:'select', req:true, optsKey:['opt_sim','opt_nao','opt_talvez']}
+    {id:'palestrar',  labelKey:'d_palestrar', type:'choice', req:true, optsKey:['opt_sim','opt_nao','opt_talvez']}
   ]
 };
+
+// Constrói a sequência real de telas: cada campo específico (etapa 9) vira uma tela própria.
+function buildFlow(cat) {
+  const base = FLOWS[cat] || FLOWS.voluntario;
+  const screens = [];
+  base.forEach(s => {
+    if (s === 9) {
+      (DETAILS_FIELDS[cat] || []).forEach((f, i) => screens.push({ step: 9, fieldIdx: i }));
+    } else {
+      screens.push({ step: s });
+    }
+  });
+  return screens;
+}
+
+// A categoria possui determinada etapa-base?
+function flowHasStep(s) { return state.flow.some(x => x.step === s); }
 
 // ============================================================
 // I18N
@@ -1660,6 +1682,9 @@ const I18N = {
     d_experiencia:"Comente sobre sua experiência em orquestras e sua expectativa/motivação no COB",
     d_dores:"Pontos a serem desenvolvidos ou \"dores\" do projeto/organização que você faz parte", d_dores_ph:"Ex.: falta de recursos, captação, abertura de CNPJ, equipe reduzida...",
     d_palestrar:"Teria interesse em palestrar em algum de nossos encontros?",
+    d_outro_ph:"Especifique...",
+    opt_area_com:"Comunicação", opt_area_arq:"Arquivo / Documentação", opt_area_gest:"Gestão", opt_area_pesq:"Pesquisa", opt_area_design:"Design / Audiovisual",
+    opt_carga_2:"Até 2h por semana", opt_carga_24:"2 a 4h por semana", opt_carga_46:"4 a 6h por semana", opt_carga_6:"Mais de 6h por semana",
     opt_sim:"Sim", opt_nao:"Não", opt_talvez:"Talvez",
     opt_amarela:"Amarela", opt_branca:"Branca", opt_indigena:"Indígena", opt_negra:"Negra", opt_parda:"Parda", opt_prefiro_nao:"Prefiro não responder", opt_outro:"Outro",
     opt_mulher_cis:"Mulher Cis", opt_homem_cis:"Homem Cis", opt_mulher_trans:"Mulher Trans", opt_homem_trans:"Homem Trans", opt_nao_binaria:"Pessoa Não Binária",
@@ -1735,6 +1760,9 @@ const I18N = {
     d_experiencia:"Tell us about your experience with orchestras and your expectations/motivation regarding COB.",
     d_dores:"Share some of the challenges or \"pain points\" of your project/organization", d_dores_ph:"E.g.: lack of human/financial resources, fundraising, opening a nonprofit entity, small team...",
     d_palestrar:"Would you be interested in giving a talk at one of our events?",
+    d_outro_ph:"Please specify...",
+    opt_area_com:"Communications", opt_area_arq:"Archive / Documentation", opt_area_gest:"Management", opt_area_pesq:"Research", opt_area_design:"Design / Audiovisual",
+    opt_carga_2:"Up to 2h per week", opt_carga_24:"2 to 4h per week", opt_carga_46:"4 to 6h per week", opt_carga_6:"More than 6h per week",
     opt_sim:"Yes", opt_nao:"No", opt_talvez:"Maybe",
     opt_amarela:"Asian", opt_branca:"White", opt_indigena:"Indigenous", opt_negra:"Black", opt_parda:"Mixed-race (Pardo)", opt_prefiro_nao:"Prefer not to say", opt_outro:"Other",
     opt_mulher_cis:"Cis Woman", opt_homem_cis:"Cis Man", opt_mulher_trans:"Trans Woman", opt_homem_trans:"Trans Man", opt_nao_binaria:"Non-binary person",
@@ -1810,6 +1838,9 @@ const I18N = {
     d_experiencia:"Cuéntenos sobre su experiencia en orquestas y su expectativa/motivación respecto al COB.",
     d_dores:"Comparta los puntos a desarrollar o \"dificultades\" del proyecto/organización del cual forma parte", d_dores_ph:"Ej.: falta de recursos humanos/financieros, captación de fondos, apertura de una entidad, equipo reducido...",
     d_palestrar:"¿Le interesaría dar una charla en alguno de nuestros encuentros?",
+    d_outro_ph:"Especifique...",
+    opt_area_com:"Comunicación", opt_area_arq:"Archivo / Documentación", opt_area_gest:"Gestión", opt_area_pesq:"Investigación", opt_area_design:"Diseño / Audiovisual",
+    opt_carga_2:"Hasta 2h por semana", opt_carga_24:"2 a 4h por semana", opt_carga_46:"4 a 6h por semana", opt_carga_6:"Más de 6h por semana",
     opt_sim:"Sí", opt_nao:"No", opt_talvez:"Tal vez",
     opt_amarela:"Asiática", opt_branca:"Blanca", opt_indigena:"Indígena", opt_negra:"Negra", opt_parda:"Mestiza (Parda)", opt_prefiro_nao:"Prefiero no responder", opt_outro:"Otro",
     opt_mulher_cis:"Mujer Cis", opt_homem_cis:"Hombre Cis", opt_mulher_trans:"Mujer Trans", opt_homem_trans:"Hombre Trans", opt_nao_binaria:"Persona No Binaria",
@@ -1887,7 +1918,7 @@ function toast(msg, isError) {
 // ============================================================
 function startCategory(cat) {
   state.categoria = cat;
-  state.flow = FLOWS[cat] || FLOWS.voluntario;
+  state.flow = buildFlow(cat);
   state.step = 1;
   state.selectedSlots = [];
   state.funcao = '';
@@ -1912,8 +1943,8 @@ function startCategory(cat) {
   navigate('form');
 
   // Pre-fetch slots (apenas categorias que possuem etapa de agendamento)
-  if (state.flow.includes(5) && state.masterSlots.length === 0) {
-    google.script.run.withSuccessHandler(slots => { state.masterSlots = slots || []; if (state.flow[state.step-1] === 5) renderSlots(); }).getAvailableTimes();
+  if (flowHasStep(5) && state.masterSlots.length === 0) {
+    google.script.run.withSuccessHandler(slots => { state.masterSlots = slots || []; if (state.flow[state.step-1].step === 5) renderSlots(); }).getAvailableTimes();
   }
 }
 
@@ -1942,41 +1973,60 @@ function renderFuncoes() {
 // ============================================================
 // DADOS ESPECÍFICOS POR CATEGORIA (etapa 9)
 // ============================================================
+// Renderiza UMA pergunta específica por vez (etapa 9)
 function renderDetails() {
   const box = document.getElementById('detailsFields');
   if (!box) return;
-  const fields = DETAILS_FIELDS[state.categoria] || [];
-  let html = '';
-  fields.forEach(f => {
-    const val = state.details[f.id] || '';
-    const star = f.req ? ' <span style="color:var(--pink);">*</span>' : '';
-    const ph = f.phKey ? t(f.phKey) : '';
-    html += `<div style="margin-bottom:18px;">
-      <label style="display:block;margin-bottom:6px;font-size:0.92rem;">${t(f.labelKey)}${star}</label>`;
-    if (f.type === 'text') {
-      html += `<input class="input" type="text" data-field="${f.id}" value="${val.replace(/"/g,'&quot;')}" placeholder="${ph}" oninput="state.details['${f.id}']=this.value;">`;
-    } else if (f.type === 'textarea') {
-      html += `<textarea class="input" data-field="${f.id}" rows="3" placeholder="${ph}" style="resize:vertical;min-height:80px;" oninput="state.details['${f.id}']=this.value;">${val}</textarea>`;
-    } else if (f.type === 'select') {
-      html += `<select class="select" data-field="${f.id}" onchange="state.details['${f.id}']=this.value;" style="width:100%;">
-        <option value="">${t('d_select')}</option>
-        ${f.optsKey.map(k => { const o=t(k); return `<option value="${o}" ${val===o?'selected':''}>${o}</option>`; }).join('')}
-      </select>`;
-    } else if (f.type === 'radio') {
-      html += `<div class="chip-grid">
-        ${f.optsKey.map(k => { const o=t(k); return `<div class="chip ${val===o?'selected':''}" onclick="setDetailRadio('${f.id}','${o}',this)">${o}</div>`; }).join('')}
-      </div>`;
-    }
+  const screen = state.flow[state.step-1];
+  const f = (DETAILS_FIELDS[state.categoria] || [])[screen.fieldIdx];
+  if (!f) { box.innerHTML = ''; return; }
+
+  const val = state.details[f.id] || '';
+  const ph = f.phKey ? t(f.phKey) : '';
+  const star = f.req ? ' <span style="color:var(--pink);">*</span>' : '';
+  let html = `<label class="q-title" style="display:block;margin-bottom:14px;font-size:1.15rem;">${t(f.labelKey)}${star}</label>`;
+
+  if (f.type === 'text') {
+    html += `<input class="input" type="text" value="${val.replace(/"/g,'&quot;')}" placeholder="${ph}" oninput="state.details['${f.id}']=this.value;">`;
+  } else if (f.type === 'textarea') {
+    html += `<textarea class="input" rows="4" placeholder="${ph}" style="resize:vertical;min-height:120px;" oninput="state.details['${f.id}']=this.value;">${val}</textarea>`;
+  } else if (f.type === 'date') {
+    html += `<input class="input" type="date" value="${val}" oninput="state.details['${f.id}']=this.value;">`;
+  } else if (f.type === 'select') {
+    const opts = (f.opts || []);
+    html += `<select class="select" style="width:100%;" onchange="state.details['${f.id}']=this.value;">
+      <option value="">${t('d_select')}</option>
+      ${opts.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+    </select>`;
+  } else if (f.type === 'choice') {
+    const isOther = !!state.details[f.id + '__other'];
+    html += `<div class="chip-grid">`;
+    f.optsKey.forEach(k => {
+      const o = t(k);
+      const other = f.other && k === 'opt_outro';
+      const sel = other ? isOther : (!isOther && val === o);
+      html += `<div class="chip ${sel?'selected':''}" onclick="setDetailChip('${f.id}','${o.replace(/'/g,"\\'")}',${other})">${o}</div>`;
+    });
     html += `</div>`;
-  });
+    if (isOther) {
+      html += `<input class="input" type="text" style="margin-top:12px;" placeholder="${t('d_outro_ph')}" value="${val.replace(/"/g,'&quot;')}" oninput="state.details['${f.id}']=this.value;">`;
+    }
+  }
   box.innerHTML = html;
 }
 
-function setDetailRadio(id, val, el) {
+function setDetailChip(id, val, isOther) {
+  if (isOther) {
+    state.details[id + '__other'] = true;
+    state.details[id] = '';
+    renderDetails();
+    return;
+  }
+  state.details[id + '__other'] = false;
   state.details[id] = val;
-  const grid = el.parentNode;
-  grid.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
+  renderDetails();
+  // Avança automaticamente (seleção única, menos toques)
+  setTimeout(nextStep, 220);
 }
 
 // ============================================================
@@ -1985,7 +2035,7 @@ function setDetailRadio(id, val, el) {
 function showStep(n) {
   state.step = n;
   const stepsTotal = state.flow.length;
-  const dataStep = state.flow[n-1];
+  const dataStep = state.flow[n-1].step;
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
   const cur = document.querySelector(`.step[data-step="${dataStep}"]`);
   if (cur) cur.classList.add('active');
@@ -2017,7 +2067,8 @@ function nextStep() {
 }
 
 function validateCurrentStep() {
-  const s = state.flow[state.step-1];
+  const screen = state.flow[state.step-1];
+  const s = screen.step;
   if (s === 1) {
     const n = document.getElementById('nome').value.trim();
     const sn = document.getElementById('sobrenome').value.trim();
@@ -2056,11 +2107,9 @@ function validateCurrentStep() {
     return true;
   }
   if (s === 9) {
-    const fields = DETAILS_FIELDS[state.categoria] || [];
-    for (const f of fields) {
-      if (f.req && !(state.details[f.id] && state.details[f.id].toString().trim())) {
-        toast(t('fields_required'), true); return false;
-      }
+    const f = (DETAILS_FIELDS[state.categoria] || [])[screen.fieldIdx];
+    if (f && f.req && !(state.details[f.id] && state.details[f.id].toString().trim())) {
+      toast(t('fields_required'), true); return false;
     }
     return true;
   }
@@ -2094,7 +2143,7 @@ function renderSlots() {
     list.innerHTML = '<div class="loader"></div>';
     google.script.run.withSuccessHandler(slots => {
       state.masterSlots = slots || [];
-      if (state.flow[state.step-1] === 5) renderSlots();
+      if (state.flow[state.step-1].step === 5) renderSlots();
     }).getAvailableTimes();
     return;
   }
@@ -2185,18 +2234,18 @@ function renderReview() {
     <p><b>${t('q2_main')}:</b> ${document.getElementById('email').value}</p>
     ${eEx ? `<p><b>${t('q2_extra')}:</b> ${eEx}</p>` : ''}
     <p><b>WhatsApp:</b> ${document.getElementById('whatsapp').value}</p>
-    ${state.flow.includes(4) ? `<p><b>${t('q4_title')}</b> ${state.funcao}</p>` : ''}
+    ${flowHasStep(4) ? `<p><b>${t('q4_title')}</b> ${state.funcao}</p>` : ''}
     ${(DETAILS_FIELDS[state.categoria]||[]).map(f => {
       const v = state.details[f.id];
       return v ? `<p><b>${t(f.labelKey)}:</b> ${v}</p>` : '';
     }).join('')}
-    ${state.flow.includes(5) ? `
+    ${flowHasStep(5) ? `
     <p style="margin-top:12px;"><b>${t('q5_title')}:</b></p>
     <ul style="margin:4px 0 0 0;padding-left:22px;color:var(--text-mute);">
       ${state.selectedSlots.map(s => `<li>${s}</li>`).join('')}
     </ul>` : ''}
     <p style="margin-top:12px;"><b>${t('q6_title')}:</b> ${state.files.foto ? state.files.foto.name : '—'}</p>
-    ${state.flow.includes(7) ? `<p><b>${t('q7_title')}:</b> ${state.files.cv ? state.files.cv.name : '—'}</p>` : ''}
+    ${flowHasStep(7) ? `<p><b>${t('q7_title')}:</b> ${state.files.cv ? state.files.cv.name : '—'}</p>` : ''}
     <p style="margin-top:12px;color:var(--pink);"><b>✓ ${t('terms_ok')}</b></p>
   `;
   document.getElementById('reviewBox').innerHTML = html;
@@ -2258,7 +2307,7 @@ async function finalSubmit() {
         if (res && res.success) {
           document.getElementById('successId').textContent = 'ID: ' + res.id;
           const p2 = document.getElementById('successP2');
-          if (p2) p2.textContent = state.flow.includes(5) ? t('success_p2') : t('success_p2_alt');
+          if (p2) p2.textContent = flowHasStep(5) ? t('success_p2') : t('success_p2_alt');
           navigate('success');
         } else {
           toast(t('error_server') + ' ' + (res ? res.message : '???'), true);
