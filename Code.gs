@@ -208,6 +208,11 @@ function processFormBase64(payload) {
     const emailSafe = payload.email ? payload.email.toLowerCase() : "";
     const emailExtraSafe = payload.email_extra ? payload.email_extra.toLowerCase() : "";
 
+    const temAgendamento = !!(payload.opt1 && payload.opt2 && payload.opt3);
+    const statusInicial = temAgendamento
+      ? `1: ${payload.opt1} | 2: ${payload.opt2} | 3: ${payload.opt3}`
+      : "PENDENTE";
+
     sheet.appendRow([
       uniqueId,
       new Date(),
@@ -218,7 +223,7 @@ function processFormBase64(payload) {
       "'" + payload.whatsapp,
       payload.funcao_cob,
       fotoUrl,
-      `1: ${payload.opt1} | 2: ${payload.opt2} | 3: ${payload.opt3}`,
+      statusInicial,
       cvUrl,
       ""
     ]);
@@ -254,11 +259,22 @@ function enviarNotificacoes(dados, id) {
   const appUrl = ScriptApp.getService().getUrl();
   const dataHoraAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy 'às' HH:mm");
   const emailExtraHTML = dados.email_extra ? `<p style="margin:8px 0;"><b>E-mail Adicional:</b> ${dados.email_extra}</p>` : "";
+  const temAgendamento = !!(dados.opt1 && dados.opt2 && dados.opt3);
+  const funcaoHTML = dados.funcao_cob ? `<p style="margin:8px 0;"><b>Função Pretendida:</b> ${dados.funcao_cob}</p>` : "";
+  const horariosHTML = temAgendamento
+    ? `<p style="color:#E8B4BC;margin-bottom:5px;margin-top:20px;"><b>Horários Sugeridos:</b></p><ul style="margin-top:0;color:#9BA89F;padding-left:20px;"><li style="margin-bottom:5px;">${dados.opt1}</li><li style="margin-bottom:5px;">${dados.opt2}</li><li style="margin-bottom:5px;">${dados.opt3}</li></ul>`
+    : "";
+  const rodapeCand = temAgendamento
+    ? `<p>A nossa equipe analisará a sua disponibilidade e enviará a confirmação da data e horário exatos nas próximas 48h.</p>`
+    : `<p>A nossa equipe entrará em contato em breve com os próximos passos.</p>`;
 
-  const conteudoCand = `<p>Olá <b>${dados.nome} ${dados.sobrenome}</b>,</p><p>Este é o comprovante oficial de que recebemos os seus dados como <b>${dados.categoriaLabel}</b> no Conectando Orquestras Brasileiras (COB).</p><div style="background:#0F2A20;padding:25px;border-radius:8px;margin:25px 0;border-left:4px solid #E8B4BC;"><h3 style="color:#E8B4BC;margin-top:0;font-family:'Cormorant Garamond',serif;font-size:1.2rem;">RESUMO DOS DADOS ENVIADOS</h3><p style="margin:8px 0;"><b>Categoria:</b> ${dados.categoriaLabel}</p><p style="margin:8px 0;"><b>ID de Cadastro:</b> ${id}</p><p style="margin:8px 0;"><b>Data/Hora do Envio:</b> ${dataHoraAtual}</p><p style="margin:8px 0;"><b>Função Pretendida:</b> ${dados.funcao_cob}</p><p style="margin:8px 0;"><b>E-mail Principal:</b> ${dados.email}</p>${emailExtraHTML}<p style="margin:8px 0;"><b>WhatsApp:</b> ${dados.whatsapp}</p><p style="color:#E8B4BC;margin-bottom:5px;margin-top:20px;"><b>Horários Sugeridos:</b></p><ul style="margin-top:0;color:#9BA89F;padding-left:20px;"><li style="margin-bottom:5px;">${dados.opt1}</li><li style="margin-bottom:5px;">${dados.opt2}</li><li style="margin-bottom:5px;">${dados.opt3}</li></ul></div><p>A nossa equipe analisará a sua disponibilidade e enviará a confirmação da data e horário exatos nas próximas 48h.</p>`;
+  const conteudoCand = `<p>Olá <b>${dados.nome} ${dados.sobrenome}</b>,</p><p>Este é o comprovante oficial de que recebemos os seus dados como <b>${dados.categoriaLabel}</b> no Conectando Orquestras Brasileiras (COB).</p><div style="background:#0F2A20;padding:25px;border-radius:8px;margin:25px 0;border-left:4px solid #E8B4BC;"><h3 style="color:#E8B4BC;margin-top:0;font-family:'Cormorant Garamond',serif;font-size:1.2rem;">RESUMO DOS DADOS ENVIADOS</h3><p style="margin:8px 0;"><b>Categoria:</b> ${dados.categoriaLabel}</p><p style="margin:8px 0;"><b>ID de Cadastro:</b> ${id}</p><p style="margin:8px 0;"><b>Data/Hora do Envio:</b> ${dataHoraAtual}</p>${funcaoHTML}<p style="margin:8px 0;"><b>E-mail Principal:</b> ${dados.email}</p>${emailExtraHTML}<p style="margin:8px 0;"><b>WhatsApp:</b> ${dados.whatsapp}</p>${horariosHTML}</div>${rodapeCand}`;
   MailApp.sendEmail({to: dados.email, subject: "Recibo de Cadastro COB - " + dados.categoriaLabel + " (ID: " + id + ")", htmlBody: criarTemplateEmail("CADASTRO REALIZADO!", conteudoCand)});
 
-  const conteudoAdmin = `<h2 style="color:#F5EFE6;font-family:'Inter',sans-serif;margin:0 0 15px 0;">Novo cadastro: <span style="color:#E8B4BC;">${dados.nome} ${dados.sobrenome}</span></h2><p style="font-size:1rem;color:#9BA89F;margin-bottom:20px;">Categoria: <b style="color:#F5EFE6;">${dados.categoriaLabel}</b></p><p style="font-size:1rem;"><b>Função Pretendida:</b> ${dados.funcao_cob}</p><hr style="border-top:1px solid #1F3D30;margin:25px 0;"><p style="font-size:1rem;color:#9BA89F;">O candidato sugeriu 3 opções de horários. Para confirmar o agendamento no Google Calendar, acesse o painel:</p><div style="text-align:center;margin:35px 0 20px 0;"><a href="${appUrl}?view=admin&id=${id}&categoria=${dados.categoria}" style="background:#E8B4BC;color:#0A1812;padding:15px 35px;text-decoration:none;border-radius:50px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:16px;display:inline-block;letter-spacing:1px;">APROVAR AGENDAMENTO</a></div>`;
+  const acaoAdmin = temAgendamento
+    ? `<p style="font-size:1rem;color:#9BA89F;">O candidato sugeriu 3 opções de horários. Para confirmar o agendamento no Google Calendar, acesse o painel:</p><div style="text-align:center;margin:35px 0 20px 0;"><a href="${appUrl}?view=admin&id=${id}&categoria=${dados.categoria}" style="background:#E8B4BC;color:#0A1812;padding:15px 35px;text-decoration:none;border-radius:50px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:16px;display:inline-block;letter-spacing:1px;">APROVAR AGENDAMENTO</a></div>`
+    : `<p style="font-size:1rem;color:#9BA89F;">Acesse o painel administrativo para mais detalhes do cadastro.</p>`;
+  const conteudoAdmin = `<h2 style="color:#F5EFE6;font-family:'Inter',sans-serif;margin:0 0 15px 0;">Novo cadastro: <span style="color:#E8B4BC;">${dados.nome} ${dados.sobrenome}</span></h2><p style="font-size:1rem;color:#9BA89F;margin-bottom:20px;">Categoria: <b style="color:#F5EFE6;">${dados.categoriaLabel}</b></p>${funcaoHTML}<hr style="border-top:1px solid #1F3D30;margin:25px 0;">${acaoAdmin}`;
   MailApp.sendEmail({to: ADMIN_EMAIL, subject: "AÇÃO REQUERIDA: Novo cadastro COB (" + dados.categoriaLabel + ") - " + dados.nome, htmlBody: criarTemplateEmail("APROVAÇÃO PENDENTE", conteudoAdmin)});
 }
 

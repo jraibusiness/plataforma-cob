@@ -1105,7 +1105,6 @@ body {
         <button onclick="setLanguage('EN', this)">EN</button><span class="lang-divider">·</span>
         <button onclick="setLanguage('ES', this)">ES</button>
       </div>
-      <button class="nav-btn" data-i18n="nav_about" onclick="navigate('about')">SOBRE</button>
       <button class="nav-btn" id="navAdmin" data-i18n="nav_admin" onclick="navigate('login-email')">ADMIN</button>
     </div>
   </div>
@@ -1180,57 +1179,6 @@ function confirmar(id, time, cat) {
       </div>
     </div>
 
-    <div class="about-mini">
-      <h3 data-i18n="about_mini_t">Sobre o COB</h3>
-      <p data-i18n="about_mini_p">Iniciativa dedicada a fomentar a colaboração entre orquestras brasileiras, facilitando o intercâmbio de conhecimentos, materiais e técnicas de gestão.</p>
-      <button class="link-pink" data-i18n="about_mini_btn" onclick="navigate('about')">Saiba mais →</button>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================
-     ROUTE: ABOUT
-     ============================================================ -->
-<section class="route" id="route-about">
-  <div class="container about-page">
-    <h1 data-i18n="about_h1">Sobre o COB</h1>
-    <p class="lead" data-i18n="about_lead">A arte de unir pela música.</p>
-
-    <div class="about-block">
-      <h2 data-i18n="about_what_t">O que é</h2>
-      <p data-i18n="about_what_p">O Projeto COB – Conectando Orquestras Brasileiras é uma iniciativa dedicada a fomentar a colaboração entre orquestras de todo o país, visando estabelecer uma rede colaborativa. O propósito é facilitar o intercâmbio de conhecimentos, materiais e técnicas relacionadas à gestão de grupos sinfônicos, promovendo uma administração mais coesa e eficaz.</p>
-    </div>
-
-    <div class="about-block">
-      <h2 data-i18n="about_target_t">Perfis-alvo</h2>
-      <ul>
-        <li data-i18n="about_target_1">Orquestras Sinfônicas e Filarmônicas</li>
-        <li data-i18n="about_target_2">Orquestras Comunitárias (com finalidade laica)</li>
-        <li data-i18n="about_target_3">Orquestras de Projetos ou Programas Socioculturais (formalizadas ou não)</li>
-        <li data-i18n="about_target_4">Orquestras de Universidades</li>
-      </ul>
-    </div>
-
-    <div class="about-block">
-      <h2 data-i18n="about_excl_t">Não abarcamos</h2>
-      <p data-i18n="about_excl_p">Orquestras de Iniciativa Privada (empresas), de Câmara, de Rabecas e de Viola Caipira; Cameratas; Bandas Sinfônicas; Quartetos; entre outros, por entender que estes modelos têm estruturas (artísticas e administrativas) diferentes e, portanto, distanciam-se do escopo de atividades do COB.</p>
-    </div>
-
-    <div class="about-block">
-      <h2 data-i18n="about_data_t">Dados e LGPD</h2>
-      <p data-i18n="about_data_p">O COB solicita dados para efetivação de cadastro, análise de perfis dos integrantes, das cidades dos projetos e orquestras, e seus modelos de gestão — visto que há uma estratégia de expansão (inclusive geográfica). Não há tradição no país com pesquisas direcionadas a grupos sinfônicos: o COB tem o intuito de semear essa prática e divulgá-las periodicamente. Política de LGPD em elaboração.</p>
-    </div>
-
-    <div class="about-block">
-      <h2 data-i18n="about_contact_t">Contato</h2>
-      <p><b>E-mail:</b> orquestrasbrasileiras@gmail.com</p>
-      <p><b>Instagram:</b> @orquestrasbr</p>
-      <p><b>LinkedIn:</b> Conectando Orquestras Brasileiras</p>
-    </div>
-
-    <div class="text-center mt-3">
-      <button class="btn btn-ghost" style="display:inline-flex;width:auto;padding-left:34px;padding-right:34px;" data-i18n="back_home" onclick="navigate('home')">← VOLTAR AO INÍCIO</button>
-    </div>
   </div>
 </section>
 
@@ -1533,11 +1481,20 @@ function confirmar(id, time, cat) {
 // CONFIG / STATE
 // ============================================================
 const APP_URL = "<?= typeof appUrl !== 'undefined' ? appUrl : '' ?>";
-const STEPS_TOTAL = 8;
+
+// Sequência de telas (data-step) por categoria.
+// Embaixador(a) e Representante de Orquestra não passam por
+// "função" (etapa 4) nem por agendamento de onboarding (etapa 5).
+const FLOWS = {
+  voluntario: [1,2,3,4,5,6,7,8],
+  embaixador: [1,2,3,6,7,8],
+  representante: [1,2,3,6,7,8]
+};
 
 const state = {
   step: 1,
   categoria: 'voluntario',
+  flow: FLOWS.voluntario,
   selectedSlots: [],
   funcao: '',
   files: { foto: null, cv: null },
@@ -1552,9 +1509,7 @@ const state = {
 };
 
 const FUNCOES = {
-  voluntario: ['GT Gestão e Comunicação', 'GT Orquestrando Arquivo', 'Coordenação Geral', 'Outra Frente'],
-  embaixador: ['Embaixador(a) Regional', 'Embaixador(a) Nacional', 'Embaixador(a) Internacional'],
-  representante: ['Maestro(a)', 'Diretor(a) Artístico(a)', 'Diretor(a) Administrativo(a)', 'Coordenação', 'Músico(a)', 'Outro']
+  voluntario: ['GT Gestão e Comunicação', 'GT Orquestrando Arquivo', 'Coordenação Geral', 'Outra Frente']
 };
 
 // ============================================================
@@ -1753,6 +1708,7 @@ function toast(msg, isError) {
 // ============================================================
 function startCategory(cat) {
   state.categoria = cat;
+  state.flow = FLOWS[cat] || FLOWS.voluntario;
   state.step = 1;
   state.selectedSlots = [];
   state.funcao = '';
@@ -1774,9 +1730,9 @@ function startCategory(cat) {
   showStep(1);
   navigate('form');
 
-  // Pre-fetch slots
-  if (state.masterSlots.length === 0) {
-    google.script.run.withSuccessHandler(slots => { state.masterSlots = slots || []; if (state.step === 5) renderSlots(); }).getAvailableTimes();
+  // Pre-fetch slots (apenas categorias que possuem etapa de agendamento)
+  if (state.flow.includes(5) && state.masterSlots.length === 0) {
+    google.script.run.withSuccessHandler(slots => { state.masterSlots = slots || []; if (state.flow[state.step-1] === 5) renderSlots(); }).getAvailableTimes();
   }
 }
 
@@ -1807,20 +1763,22 @@ function renderFuncoes() {
 // ============================================================
 function showStep(n) {
   state.step = n;
+  const stepsTotal = state.flow.length;
+  const dataStep = state.flow[n-1];
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-  const cur = document.querySelector(`.step[data-step="${n}"]`);
+  const cur = document.querySelector(`.step[data-step="${dataStep}"]`);
   if (cur) cur.classList.add('active');
   document.getElementById('stepNum').textContent = n;
-  document.getElementById('stepTotal').textContent = STEPS_TOTAL;
-  document.getElementById('progressFill').style.width = ((n-1)/(STEPS_TOTAL-1)*100) + '%';
+  document.getElementById('stepTotal').textContent = stepsTotal;
+  document.getElementById('progressFill').style.width = ((n-1)/(stepsTotal-1)*100) + '%';
 
   // Botão último é "ENVIAR"
-  const isLast = n === STEPS_TOTAL;
+  const isLast = n === stepsTotal;
   document.getElementById('btnNext').textContent = isLast ? t('btn_submit') : t('btn_next');
   document.getElementById('btnNextMobile').textContent = isLast ? t('btn_submit') : t('btn_next');
 
-  if (n === 5) renderSlots();
-  if (n === 8) renderReview();
+  if (dataStep === 5) renderSlots();
+  if (dataStep === 8) renderReview();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
@@ -1831,12 +1789,12 @@ function prevStep() {
 
 function nextStep() {
   if (!validateCurrentStep()) return;
-  if (state.step === STEPS_TOTAL) { finalSubmit(); return; }
+  if (state.step === state.flow.length) { finalSubmit(); return; }
   showStep(state.step + 1);
 }
 
 function validateCurrentStep() {
-  const s = state.step;
+  const s = state.flow[state.step-1];
   if (s === 1) {
     const n = document.getElementById('nome').value.trim();
     const sn = document.getElementById('sobrenome').value.trim();
@@ -1900,7 +1858,7 @@ function renderSlots() {
     list.innerHTML = '<div class="loader"></div>';
     google.script.run.withSuccessHandler(slots => {
       state.masterSlots = slots || [];
-      if (state.step === 5) renderSlots();
+      if (state.flow[state.step-1] === 5) renderSlots();
     }).getAvailableTimes();
     return;
   }
@@ -1991,11 +1949,12 @@ function renderReview() {
     <p><b>${t('q2_main')}:</b> ${document.getElementById('email').value}</p>
     ${eEx ? `<p><b>${t('q2_extra')}:</b> ${eEx}</p>` : ''}
     <p><b>WhatsApp:</b> ${document.getElementById('whatsapp').value}</p>
-    <p><b>${t('q4_title')}</b> ${state.funcao}</p>
+    ${state.flow.includes(4) ? `<p><b>${t('q4_title')}</b> ${state.funcao}</p>` : ''}
+    ${state.flow.includes(5) ? `
     <p style="margin-top:12px;"><b>${t('q5_title')}:</b></p>
     <ul style="margin:4px 0 0 0;padding-left:22px;color:var(--text-mute);">
       ${state.selectedSlots.map(s => `<li>${s}</li>`).join('')}
-    </ul>
+    </ul>` : ''}
     <p style="margin-top:12px;"><b>${t('q6_title')}:</b> ${state.files.foto ? state.files.foto.name : '—'}</p>
     <p><b>${t('q7_title')}:</b> ${state.files.cv ? state.files.cv.name : '—'}</p>
   `;
@@ -2033,9 +1992,9 @@ async function finalSubmit() {
       email_extra: document.getElementById('email_extra').value,
       whatsapp: document.getElementById('whatsapp').value,
       funcao_cob: state.funcao,
-      opt1: state.selectedSlots[0],
-      opt2: state.selectedSlots[1],
-      opt3: state.selectedSlots[2],
+      opt1: state.selectedSlots[0] || '',
+      opt2: state.selectedSlots[1] || '',
+      opt3: state.selectedSlots[2] || '',
       foto: fotoB64,
       cv: cvB64
     };
@@ -2157,7 +2116,7 @@ function renderCatTable() {
       else if (c.status.toUpperCase().includes('CANCELADO')) { badge = 'b-canceled'; statusText = t('canceled_label'); }
       else { badge = 'b-pending'; statusText = t('pending_label'); pendentes++; }
 
-      const agendaUrl = !c.status.toUpperCase().includes('CONFIRMADO')
+      const agendaUrl = (c.categoria === 'voluntario' && !c.status.toUpperCase().includes('CONFIRMADO'))
         ? `<a href="${APP_URL}?view=admin&id=${c.id}&categoria=${c.categoria}" target="_blank" class="action-btn">AGENDAR</a>` : '';
 
       body.innerHTML += `<tr id="row-${c.id}">
