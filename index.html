@@ -1315,24 +1315,24 @@ function confirmar(id, time, cat) {
 
           <!-- STEP 9: Dados específicos por categoria -->
           <div class="step" data-step="9">
-            <h2 class="q-title">Informações específicas</h2>
-            <p class="q-help">Preencha os campos abaixo. Itens com <b>*</b> são obrigatórios.</p>
+            <h2 class="q-title" data-i18n="q9_title">Informações específicas</h2>
+            <p class="q-help" data-i18n="q9_help">Preencha os campos abaixo. Itens com <b>*</b> são obrigatórios.</p>
             <div id="detailsFields"></div>
           </div>
 
           <!-- STEP 10: Termos de Adesão + LGPD -->
           <div class="step" data-step="10">
-            <h2 class="q-title">Termo de Adesão e LGPD</h2>
-            <p class="q-help">Leia com atenção e confirme para concluir.</p>
+            <h2 class="q-title" data-i18n="q10_title">Termo de Adesão e LGPD</h2>
+            <p class="q-help" data-i18n="q10_help">Leia com atenção e confirme para concluir.</p>
             <div class="review-box" style="max-height:320px;overflow:auto;font-size:0.82rem;line-height:1.55;">
-              <p>Pelo presente <b>Termo de Adesão</b> manifesto adesão para a realização de Serviço Voluntário no <b>“COB - Conectando Orquestras Brasileiras”</b>. Declaro conhecer que, nos termos da Lei nº 9.608 de 18/02/1998, a minha participação no Serviço Voluntário não é remunerada, não gera vínculo empregatício e nem obrigação trabalhista e previdenciária. O presente Termo tem início a partir de sua aprovação e poderá ser rescindido a qualquer tempo, por iniciativa de ambas as partes.</p>
-              <p>Cedo ao projeto, a título gratuito, os direitos de uso de imagem e som relativos a fotografias e gravações realizadas nas atividades, para difusão midiática (Instagram, Facebook, LinkedIn, site/blog, WhatsApp e nuvem do grupo). Tenho liberdade para revogar esta autorização a qualquer momento. O COB não se responsabiliza por compartilhamento de imagem revogada que circule em mídias externas que não administre.</p>
-              <p>Comprometo-me a manter sigilo sobre informações confidenciais do projeto. Estou ciente de que o COB pode reduzir, atualizar ou encerrar as atividades conforme necessidades internas.</p>
-              <p><b>LGPD:</b> Mediante a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados), o projeto compromete-se a manter a confidencialidade dos dados coletados (nome, telefone, e-mail, data de nascimento). Ao confirmar, você concorda com os termos do COB nesta data.</p>
+              <p data-i18n="terms_p1">Pelo presente <b>Termo de Adesão</b> manifesto adesão para a realização de Serviço Voluntário no <b>“COB - Conectando Orquestras Brasileiras”</b>. Declaro conhecer que, nos termos da Lei nº 9.608 de 18/02/1998, a minha participação no Serviço Voluntário não é remunerada, não gera vínculo empregatício e nem obrigação trabalhista e previdenciária. O presente Termo tem início a partir de sua aprovação e poderá ser rescindido a qualquer tempo, por iniciativa de ambas as partes.</p>
+              <p data-i18n="terms_p2">Cedo ao projeto, a título gratuito, os direitos de uso de imagem e som relativos a fotografias e gravações realizadas nas atividades, para difusão midiática (Instagram, Facebook, LinkedIn, site/blog, WhatsApp e nuvem do grupo). Tenho liberdade para revogar esta autorização a qualquer momento. O COB não se responsabiliza por compartilhamento de imagem revogada que circule em mídias externas que não administre.</p>
+              <p data-i18n="terms_p3">Comprometo-me a manter sigilo sobre informações confidenciais do projeto. Estou ciente de que o COB pode reduzir, atualizar ou encerrar as atividades conforme necessidades internas.</p>
+              <p data-i18n="terms_p4"><b>LGPD:</b> Mediante a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados), o projeto compromete-se a manter a confidencialidade dos dados coletados (nome, telefone, e-mail, data de nascimento). Ao confirmar, você concorda com os termos do COB nesta data.</p>
             </div>
             <label style="display:flex;gap:10px;align-items:flex-start;margin-top:16px;cursor:pointer;">
               <input type="checkbox" id="aceiteTermos" style="margin-top:4px;flex:0 0 auto;width:18px;height:18px;" onchange="state.aceiteTermos=this.checked;">
-              <span style="font-size:0.9rem;">Li e estou <b>ciente e de acordo</b> com o Termo de Adesão ao Serviço Voluntário do COB e com o tratamento dos meus dados pessoais conforme a LGPD.</span>
+              <span style="font-size:0.9rem;" data-i18n="terms_accept">Li e estou <b>ciente e de acordo</b> com o Termo de Adesão ao Serviço Voluntário do COB e com o tratamento dos meus dados pessoais conforme a LGPD.</span>
             </label>
           </div>
 
@@ -1569,37 +1569,38 @@ const FUNCOES = {
 };
 
 // Campos específicos por categoria (etapa 9) — conforme formulários oficiais do COB
+// label/ph/opts são chaves i18n, resolvidas em renderDetails()/renderReview() via t()
 const DETAILS_FIELDS = {
   voluntario: [
-    {id:'area_atuacao',     label:'Área de atuação',                                         type:'text',   req:true,  ph:'Ex.: comunicação, arquivo, gestão...'},
-    {id:'tel_recado',       label:'Telefone para recado (nome e contato de alguém próximo)', type:'text',   req:true,  ph:'Ex.: Maria (mãe) — 11 99999-0000'},
-    {id:'carga_horaria',    label:'Carga horária semanal que disponibiliza',                 type:'text',   req:true,  ph:'Ex.: 4h por semana'},
-    {id:'apelido',          label:'Como gostaria de ser chamado(a)? (apelido)',              type:'text',   req:false, ph:'Opcional'},
-    {id:'aniversario',      label:'Você comemora aniversário?',                              type:'radio',  req:true,  opts:['Sim','Não']},
-    {id:'data_aniversario', label:'Caso comemore, informe a data',                           type:'text',   req:false, ph:'DD/MM'},
-    {id:'mencionar_aniv',   label:'Podemos mencionar seu aniversário em nossos meios de comunicação?', type:'radio', req:false, opts:['Sim','Não']}
+    {id:'area_atuacao',     labelKey:'d_area_atuacao',     type:'text',   req:true,  phKey:'d_area_atuacao_ph'},
+    {id:'tel_recado',       labelKey:'d_tel_recado',       type:'text',   req:true,  phKey:'d_tel_recado_ph'},
+    {id:'carga_horaria',    labelKey:'d_carga_horaria',    type:'text',   req:true,  phKey:'d_carga_horaria_ph'},
+    {id:'apelido',          labelKey:'d_apelido',          type:'text',   req:false, phKey:'d_opcional'},
+    {id:'aniversario',      labelKey:'d_aniversario',      type:'radio',  req:true,  optsKey:['opt_sim','opt_nao']},
+    {id:'data_aniversario', labelKey:'d_data_aniversario', type:'text',   req:false, phKey:'d_data_ph'},
+    {id:'mencionar_aniv',   labelKey:'d_mencionar_aniv',   type:'radio',  req:false, optsKey:['opt_sim','opt_nao']}
   ],
   embaixador: [
-    {id:'orquestra',        label:'Orquestra, instituição ou projeto do qual faz parte',     type:'text',   req:true},
-    {id:'funcao_emb',       label:'Qual a sua função?',                                       type:'text',   req:true},
-    {id:'apelido',          label:'Como gostaria de ser chamado(a)? (apelido)',              type:'text',   req:false, ph:'Opcional'},
-    {id:'aniversario',      label:'Você comemora aniversário?',                              type:'radio',  req:true,  opts:['Sim','Não']},
-    {id:'data_aniversario', label:'Caso comemore, informe a data',                           type:'text',   req:false, ph:'DD/MM'},
-    {id:'parabenizar',      label:'Podemos parabenizá-lo(a) em nossos meios de comunicação?',type:'radio',  req:false, opts:['Sim','Não']}
+    {id:'orquestra',        labelKey:'d_orquestra_emb',    type:'text',   req:true},
+    {id:'funcao_emb',       labelKey:'d_funcao_emb',       type:'text',   req:true},
+    {id:'apelido',          labelKey:'d_apelido',          type:'text',   req:false, phKey:'d_opcional'},
+    {id:'aniversario',      labelKey:'d_aniversario',      type:'radio',  req:true,  optsKey:['opt_sim','opt_nao']},
+    {id:'data_aniversario', labelKey:'d_data_aniversario', type:'text',   req:false, phKey:'d_data_ph'},
+    {id:'parabenizar',      labelKey:'d_parabenizar',      type:'radio',  req:false, optsKey:['opt_sim','opt_nao']}
   ],
   representante: [
-    {id:'cidade',     label:'Cidade',  type:'text', req:true},
-    {id:'estado',     label:'Estado',  type:'text', req:true},
-    {id:'raca',       label:'Como você se identifica? (cor/raça)', type:'select', req:true, opts:['Amarela','Branca','Indígena','Negra','Parda','Prefiro não responder','Outro']},
-    {id:'genero',     label:'Como você se identifica? (gênero)',   type:'select', req:true, opts:['Mulher Cis','Homem Cis','Mulher Trans','Homem Trans','Pessoa Não Binária','Prefiro não responder','Outro']},
-    {id:'rede_social',label:'Rede social', type:'text', req:false, ph:'Opcional'},
-    {id:'formacao',   label:'Área de formação escolar ou acadêmica', type:'text', req:false},
-    {id:'orquestra',  label:'Orquestra ou projeto que representa ou faz parte', type:'text', req:true},
-    {id:'cargo',      label:'Cargo atual', type:'text', req:true},
-    {id:'apelido',    label:'Como te chamamos? (apelido)', type:'text', req:false, ph:'Opcional'},
-    {id:'experiencia',label:'Comente sobre sua experiência em orquestras e sua expectativa/motivação no COB', type:'textarea', req:true},
-    {id:'dores',      label:'Pontos a serem desenvolvidos ou "dores" do projeto/organização que você faz parte', type:'textarea', req:true, ph:'Ex.: falta de recursos, captação, abertura de CNPJ, equipe reduzida...'},
-    {id:'palestrar',  label:'Teria interesse em palestrar em algum de nossos encontros?', type:'select', req:true, opts:['Sim','Não','Talvez']}
+    {id:'cidade',     labelKey:'d_cidade',  type:'text', req:true},
+    {id:'estado',     labelKey:'d_estado',  type:'text', req:true},
+    {id:'raca',       labelKey:'d_raca',    type:'select', req:true, optsKey:['opt_amarela','opt_branca','opt_indigena','opt_negra','opt_parda','opt_prefiro_nao','opt_outro']},
+    {id:'genero',     labelKey:'d_genero',  type:'select', req:true, optsKey:['opt_mulher_cis','opt_homem_cis','opt_mulher_trans','opt_homem_trans','opt_nao_binaria','opt_prefiro_nao','opt_outro']},
+    {id:'rede_social',labelKey:'d_rede_social', type:'text', req:false, phKey:'d_opcional'},
+    {id:'formacao',   labelKey:'d_formacao', type:'text', req:false},
+    {id:'orquestra',  labelKey:'d_orquestra_rep', type:'text', req:true},
+    {id:'cargo',      labelKey:'d_cargo',   type:'text', req:true},
+    {id:'apelido',    labelKey:'d_apelido_rep', type:'text', req:false, phKey:'d_opcional'},
+    {id:'experiencia',labelKey:'d_experiencia', type:'textarea', req:true},
+    {id:'dores',      labelKey:'d_dores',   type:'textarea', req:true, phKey:'d_dores_ph'},
+    {id:'palestrar',  labelKey:'d_palestrar', type:'select', req:true, optsKey:['opt_sim','opt_nao','opt_talvez']}
   ]
 };
 
@@ -1633,6 +1634,35 @@ const I18N = {
     q6_title:"Foto de perfil", q6_help:"Headshot 3x4 ou 1:1, alta resolução, fundo neutro. Máx 5MB.", q6_tap:"Toque para enviar uma foto", q6_formats:"JPG, PNG ou WEBP",
     q7_title:"Currículo", q7_help:"PDF ou DOCX. Máx 5MB.", q7_tap:"Toque para enviar o currículo", q7_formats:"PDF ou DOCX",
     q8_title:"Revise e confirme", q8_help:"Verifique seus dados antes do envio final.",
+    q9_title:"Informações específicas", q9_help:"Preencha os campos abaixo. Itens com <b>*</b> são obrigatórios.",
+    q10_title:"Termo de Adesão e LGPD", q10_help:"Leia com atenção e confirme para concluir.",
+    terms_p1:"Pelo presente <b>Termo de Adesão</b> manifesto adesão para a realização de Serviço Voluntário no <b>“COB - Conectando Orquestras Brasileiras”</b>. Declaro conhecer que, nos termos da Lei nº 9.608 de 18/02/1998, a minha participação no Serviço Voluntário não é remunerada, não gera vínculo empregatício e nem obrigação trabalhista e previdenciária. O presente Termo tem início a partir de sua aprovação e poderá ser rescindido a qualquer tempo, por iniciativa de ambas as partes.",
+    terms_p2:"Cedo ao projeto, a título gratuito, os direitos de uso de imagem e som relativos a fotografias e gravações realizadas nas atividades, para difusão midiática (Instagram, Facebook, LinkedIn, site/blog, WhatsApp e nuvem do grupo). Tenho liberdade para revogar esta autorização a qualquer momento. O COB não se responsabiliza por compartilhamento de imagem revogada que circule em mídias externas que não administre.",
+    terms_p3:"Comprometo-me a manter sigilo sobre informações confidenciais do projeto. Estou ciente de que o COB pode reduzir, atualizar ou encerrar as atividades conforme necessidades internas.",
+    terms_p4:"<b>LGPD:</b> Mediante a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados), o projeto compromete-se a manter a confidencialidade dos dados coletados (nome, telefone, e-mail, data de nascimento). Ao confirmar, você concorda com os termos do COB nesta data.",
+    terms_accept:"Li e estou <b>ciente e de acordo</b> com o Termo de Adesão ao Serviço Voluntário do COB e com o tratamento dos meus dados pessoais conforme a LGPD.",
+    terms_required:"É necessário aceitar os termos para continuar.", terms_ok:"Termos aceitos",
+    success_p2_alt:"A nossa equipe analisará o seu cadastro e entrará em contato em breve com os próximos passos.",
+    d_select:"Selecione...", d_opcional:"Opcional", d_data_ph:"DD/MM",
+    d_area_atuacao:"Área de atuação", d_area_atuacao_ph:"Ex.: comunicação, arquivo, gestão...",
+    d_tel_recado:"Telefone para recado (nome e contato de alguém próximo)", d_tel_recado_ph:"Ex.: Maria (mãe) — 11 99999-0000",
+    d_carga_horaria:"Carga horária semanal que disponibiliza", d_carga_horaria_ph:"Ex.: 4h por semana",
+    d_apelido:"Como gostaria de ser chamado(a)? (apelido)",
+    d_aniversario:"Você comemora aniversário?", d_data_aniversario:"Caso comemore, informe a data",
+    d_mencionar_aniv:"Podemos mencionar seu aniversário em nossos meios de comunicação?",
+    d_orquestra_emb:"Orquestra, instituição ou projeto do qual faz parte", d_funcao_emb:"Qual a sua função?",
+    d_parabenizar:"Podemos parabenizá-lo(a) em nossos meios de comunicação?",
+    d_cidade:"Cidade", d_estado:"Estado",
+    d_raca:"Como você se identifica? (cor/raça)", d_genero:"Como você se identifica? (gênero)",
+    d_rede_social:"Rede social", d_formacao:"Área de formação escolar ou acadêmica",
+    d_orquestra_rep:"Orquestra ou projeto que representa ou faz parte", d_cargo:"Cargo atual",
+    d_apelido_rep:"Como te chamamos? (apelido)",
+    d_experiencia:"Comente sobre sua experiência em orquestras e sua expectativa/motivação no COB",
+    d_dores:"Pontos a serem desenvolvidos ou \"dores\" do projeto/organização que você faz parte", d_dores_ph:"Ex.: falta de recursos, captação, abertura de CNPJ, equipe reduzida...",
+    d_palestrar:"Teria interesse em palestrar em algum de nossos encontros?",
+    opt_sim:"Sim", opt_nao:"Não", opt_talvez:"Talvez",
+    opt_amarela:"Amarela", opt_branca:"Branca", opt_indigena:"Indígena", opt_negra:"Negra", opt_parda:"Parda", opt_prefiro_nao:"Prefiro não responder", opt_outro:"Outro",
+    opt_mulher_cis:"Mulher Cis", opt_homem_cis:"Homem Cis", opt_mulher_trans:"Mulher Trans", opt_homem_trans:"Homem Trans", opt_nao_binaria:"Pessoa Não Binária",
     btn_back:"VOLTAR", btn_next:"PRÓXIMO", btn_submit:"CONFIRMAR E ENVIAR",
     success_t:"DADOS REGISTRADOS COM SUCESSO!", success_p1:"Você receberá um e-mail com o comprovante do envio.", success_p2:"A nossa equipe confirmará a data exata da sua sessão de onboarding em até 48h.", success_p3:"Fique atento à sua caixa de spam.",
     login_title:"ACESSO RESTRITO", login_desc:"Insira o e-mail institucional para receber um código de acesso.", login_email_ph:"E-mail institucional", login_send:"ENVIAR CÓDIGO", login_enter:"ENTRAR NO PAINEL",
@@ -1679,6 +1709,35 @@ const I18N = {
     q6_title:"Profile photo", q6_help:"Headshot 3x4 or 1:1, high resolution, neutral background. Max 5MB.", q6_tap:"Tap to upload a photo", q6_formats:"JPG, PNG or WEBP",
     q7_title:"Resume", q7_help:"PDF or DOCX. Max 5MB.", q7_tap:"Tap to upload your resume", q7_formats:"PDF or DOCX",
     q8_title:"Review & confirm", q8_help:"Check your data before final submission.",
+    q9_title:"Specific information", q9_help:"Fill in the fields below. Items marked with <b>*</b> are required.",
+    q10_title:"Membership Agreement & Privacy Policy", q10_help:"Please read carefully and confirm to proceed.",
+    terms_p1:"Through this <b>Membership Agreement</b> I express my agreement to perform Volunteer Service at <b>“COB - Conectando Orquestras Brasileiras”</b>. I acknowledge that, under Brazilian Law No. 9,608 of 02/18/1998, my participation in the Volunteer Service is unpaid and creates no employment or labor relationship. This Agreement begins upon approval and may be terminated at any time by either party, upon notice to the other.",
+    terms_p2:"I grant the project, free of charge, the rights to use my image and sound from photos and recordings made during activities, for media distribution (Instagram, Facebook, LinkedIn, a possible website or blog, WhatsApp, and the group's cloud storage). I am free to revoke this authorization at any time. COB is not responsible for the sharing of revoked images that may circulate on external media it does not manage.",
+    terms_p3:"I commit to keeping confidential information about the project private. I acknowledge COB may reduce, update, or end activities as needed, with prior notice.",
+    terms_p4:"<b>Privacy Policy:</b> Under Brazilian Law No. 13,709/2018 (LGPD - General Data Protection Law), the project commits to keeping the data collected (full name, phone, email, date of birth) confidential. By confirming, you agree to COB's terms as of this date.",
+    terms_accept:"I have read and I am <b>aware and agree</b> with COB's Volunteer Service Membership Agreement and the processing of my personal data under the LGPD.",
+    terms_required:"You must accept the terms to continue.", terms_ok:"Terms accepted",
+    success_p2_alt:"Our team will review your registration and reach out shortly with next steps.",
+    d_select:"Select...", d_opcional:"Optional", d_data_ph:"DD/MM",
+    d_area_atuacao:"Area of activity", d_area_atuacao_ph:"E.g.: communications, archive, management...",
+    d_tel_recado:"Backup phone (name and contact of someone close to you)", d_tel_recado_ph:"E.g.: Maria (mother) — +1 555 0000",
+    d_carga_horaria:"Weekly time you can dedicate to the project", d_carga_horaria_ph:"E.g.: 4h per week",
+    d_apelido:"What would you like to be called? (nickname)",
+    d_aniversario:"Do you celebrate your birthday?", d_data_aniversario:"If so, what's the date?",
+    d_mencionar_aniv:"May we mention your birthday on our communication channels?",
+    d_orquestra_emb:"Orchestra, institution or project you're part of", d_funcao_emb:"What is your role?",
+    d_parabenizar:"May we congratulate you on our communication channels?",
+    d_cidade:"City", d_estado:"State",
+    d_raca:"How do you identify? (race/ethnicity)", d_genero:"How do you identify? (gender)",
+    d_rede_social:"Social media", d_formacao:"Field of academic/educational background",
+    d_orquestra_rep:"Orchestra or project you represent or belong to", d_cargo:"Current position",
+    d_apelido_rep:"What should we call you? (nickname)",
+    d_experiencia:"Tell us about your experience with orchestras and your expectations/motivation regarding COB.",
+    d_dores:"Share some of the challenges or \"pain points\" of your project/organization", d_dores_ph:"E.g.: lack of human/financial resources, fundraising, opening a nonprofit entity, small team...",
+    d_palestrar:"Would you be interested in giving a talk at one of our events?",
+    opt_sim:"Yes", opt_nao:"No", opt_talvez:"Maybe",
+    opt_amarela:"Asian", opt_branca:"White", opt_indigena:"Indigenous", opt_negra:"Black", opt_parda:"Mixed-race (Pardo)", opt_prefiro_nao:"Prefer not to say", opt_outro:"Other",
+    opt_mulher_cis:"Cis Woman", opt_homem_cis:"Cis Man", opt_mulher_trans:"Trans Woman", opt_homem_trans:"Trans Man", opt_nao_binaria:"Non-binary person",
     btn_back:"BACK", btn_next:"NEXT", btn_submit:"CONFIRM & SEND",
     success_t:"YOUR DATA WAS RECORDED!", success_p1:"You will receive an email with the submission receipt.", success_p2:"Our team will confirm the exact onboarding date within 48h.", success_p3:"Please check your spam folder.",
     login_title:"RESTRICTED ACCESS", login_desc:"Enter your institutional email to receive an access code.", login_email_ph:"Institutional email", login_send:"SEND CODE", login_enter:"ENTER DASHBOARD",
@@ -1725,6 +1784,35 @@ const I18N = {
     q6_title:"Foto de perfil", q6_help:"Headshot 3x4 o 1:1, alta resolución, fondo neutro. Máx 5MB.", q6_tap:"Toque para subir una foto", q6_formats:"JPG, PNG o WEBP",
     q7_title:"Currículum", q7_help:"PDF o DOCX. Máx 5MB.", q7_tap:"Toque para subir el currículum", q7_formats:"PDF o DOCX",
     q8_title:"Revise y confirme", q8_help:"Verifique sus datos antes del envío final.",
+    q9_title:"Información específica", q9_help:"Complete los campos a continuación. Los ítems con <b>*</b> son obligatorios.",
+    q10_title:"Términos de Adhesión y LGPD", q10_help:"Lea con atención y confirme para continuar.",
+    terms_p1:"Mediante el presente <b>Término de Adhesión</b> manifiesto mi adhesión para la realización de Servicio Voluntario en <b>“COB - Conectando Orquestras Brasileiras”</b>. Declaro conocer que, conforme la Ley nº 9.608 del 18/02/1998, mi participación en el Servicio Voluntario no es remunerada y no genera vínculo laboral. El presente Término inicia a partir de su aprobación y podrá rescindirse en cualquier momento, por iniciativa de cualquiera de las partes, mediante notificación a la otra.",
+    terms_p2:"Cedo al proyecto, de forma gratuita, los derechos de uso de imagen y sonido relativos a fotografías y grabaciones realizadas durante las actividades, para difusión mediática (Instagram, Facebook, LinkedIn, un posible sitio o blog, WhatsApp y la nube del grupo). Tengo libertad para revocar esta autorización en cualquier momento. El COB no se responsabiliza por la difusión de imágenes revocadas que circulen en medios externos que no administre.",
+    terms_p3:"Me comprometo a mantener la confidencialidad de la información del proyecto. Estoy consciente de que el COB puede reducir, actualizar o finalizar las actividades según sus necesidades, con previo aviso.",
+    terms_p4:"<b>LGPD:</b> Conforme la Ley nº 13.709/2018 (Ley General de Protección de Datos), el proyecto se compromete a mantener la confidencialidad de los datos recolectados (nombre completo, teléfono, correo, fecha de nacimiento). Al confirmar, usted acepta los términos del COB en esta fecha.",
+    terms_accept:"He leído y estoy <b>consciente y de acuerdo</b> con el Término de Adhesión al Servicio Voluntario del COB y con el tratamiento de mis datos personales conforme a la LGPD.",
+    terms_required:"Es necesario aceptar los términos para continuar.", terms_ok:"Términos aceptados",
+    success_p2_alt:"Nuestro equipo analizará su registro y se pondrá en contacto pronto con los próximos pasos.",
+    d_select:"Seleccione...", d_opcional:"Opcional", d_data_ph:"DD/MM",
+    d_area_atuacao:"Área de actuación", d_area_atuacao_ph:"Ej.: comunicación, archivo, gestión...",
+    d_tel_recado:"Teléfono de recado (nombre y contacto de alguien cercano)", d_tel_recado_ph:"Ej.: María (madre) — 11 99999-0000",
+    d_carga_horaria:"Carga horaria semanal que dispone para el proyecto", d_carga_horaria_ph:"Ej.: 4h por semana",
+    d_apelido:"¿Cómo le gustaría que lo llamen? (apodo)",
+    d_aniversario:"¿Celebra su cumpleaños?", d_data_aniversario:"Si lo celebra, indique la fecha",
+    d_mencionar_aniv:"¿Podemos mencionar su cumpleaños en nuestros canales de comunicación?",
+    d_orquestra_emb:"Orquesta, institución o proyecto del cual forma parte", d_funcao_emb:"¿Cuál es su función?",
+    d_parabenizar:"¿Podemos felicitarlo(a) en nuestros canales de comunicación?",
+    d_cidade:"Ciudad", d_estado:"Estado/Provincia",
+    d_raca:"¿Cómo se identifica? (raza/etnia)", d_genero:"¿Cómo se identifica? (género)",
+    d_rede_social:"Red social", d_formacao:"Área de formación escolar o académica",
+    d_orquestra_rep:"Orquesta o proyecto que representa o del cual forma parte", d_cargo:"Cargo actual",
+    d_apelido_rep:"¿Cómo lo llamamos? (apodo)",
+    d_experiencia:"Cuéntenos sobre su experiencia en orquestas y su expectativa/motivación respecto al COB.",
+    d_dores:"Comparta los puntos a desarrollar o \"dificultades\" del proyecto/organización del cual forma parte", d_dores_ph:"Ej.: falta de recursos humanos/financieros, captación de fondos, apertura de una entidad, equipo reducido...",
+    d_palestrar:"¿Le interesaría dar una charla en alguno de nuestros encuentros?",
+    opt_sim:"Sí", opt_nao:"No", opt_talvez:"Tal vez",
+    opt_amarela:"Asiática", opt_branca:"Blanca", opt_indigena:"Indígena", opt_negra:"Negra", opt_parda:"Mestiza (Parda)", opt_prefiro_nao:"Prefiero no responder", opt_outro:"Otro",
+    opt_mulher_cis:"Mujer Cis", opt_homem_cis:"Hombre Cis", opt_mulher_trans:"Mujer Trans", opt_homem_trans:"Hombre Trans", opt_nao_binaria:"Persona No Binaria",
     btn_back:"VOLVER", btn_next:"SIGUIENTE", btn_submit:"CONFIRMAR Y ENVIAR",
     success_t:"¡DATOS REGISTRADOS!", success_p1:"Recibirá un correo con el comprobante.", success_p2:"Nuestro equipo confirmará la fecha exacta del onboarding en 48h.", success_p3:"Revise su carpeta de spam.",
     login_title:"ACCESO RESTRINGIDO", login_desc:"Ingrese el correo institucional para recibir un código.", login_email_ph:"Correo institucional", login_send:"ENVIAR CÓDIGO", login_enter:"ENTRAR AL PANEL",
@@ -1862,20 +1950,21 @@ function renderDetails() {
   fields.forEach(f => {
     const val = state.details[f.id] || '';
     const star = f.req ? ' <span style="color:var(--pink);">*</span>' : '';
+    const ph = f.phKey ? t(f.phKey) : '';
     html += `<div style="margin-bottom:18px;">
-      <label style="display:block;margin-bottom:6px;font-size:0.92rem;">${f.label}${star}</label>`;
+      <label style="display:block;margin-bottom:6px;font-size:0.92rem;">${t(f.labelKey)}${star}</label>`;
     if (f.type === 'text') {
-      html += `<input class="input" type="text" data-field="${f.id}" value="${val.replace(/"/g,'&quot;')}" placeholder="${f.ph||''}" oninput="state.details['${f.id}']=this.value;">`;
+      html += `<input class="input" type="text" data-field="${f.id}" value="${val.replace(/"/g,'&quot;')}" placeholder="${ph}" oninput="state.details['${f.id}']=this.value;">`;
     } else if (f.type === 'textarea') {
-      html += `<textarea class="input" data-field="${f.id}" rows="3" placeholder="${f.ph||''}" style="resize:vertical;min-height:80px;" oninput="state.details['${f.id}']=this.value;">${val}</textarea>`;
+      html += `<textarea class="input" data-field="${f.id}" rows="3" placeholder="${ph}" style="resize:vertical;min-height:80px;" oninput="state.details['${f.id}']=this.value;">${val}</textarea>`;
     } else if (f.type === 'select') {
       html += `<select class="select" data-field="${f.id}" onchange="state.details['${f.id}']=this.value;" style="width:100%;">
-        <option value="">Selecione...</option>
-        ${f.opts.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+        <option value="">${t('d_select')}</option>
+        ${f.optsKey.map(k => { const o=t(k); return `<option value="${o}" ${val===o?'selected':''}>${o}</option>`; }).join('')}
       </select>`;
     } else if (f.type === 'radio') {
       html += `<div class="chip-grid">
-        ${f.opts.map(o => `<div class="chip ${val===o?'selected':''}" onclick="setDetailRadio('${f.id}','${o}',this)">${o}</div>`).join('')}
+        ${f.optsKey.map(k => { const o=t(k); return `<div class="chip ${val===o?'selected':''}" onclick="setDetailRadio('${f.id}','${o}',this)">${o}</div>`; }).join('')}
       </div>`;
     }
     html += `</div>`;
@@ -1976,7 +2065,7 @@ function validateCurrentStep() {
     return true;
   }
   if (s === 10) {
-    if (!state.aceiteTermos) { toast('É necessário aceitar os termos para continuar.', true); return false; }
+    if (!state.aceiteTermos) { toast(t('terms_required'), true); return false; }
     return true;
   }
   return true;
@@ -2099,7 +2188,7 @@ function renderReview() {
     ${state.flow.includes(4) ? `<p><b>${t('q4_title')}</b> ${state.funcao}</p>` : ''}
     ${(DETAILS_FIELDS[state.categoria]||[]).map(f => {
       const v = state.details[f.id];
-      return v ? `<p><b>${f.label}:</b> ${v}</p>` : '';
+      return v ? `<p><b>${t(f.labelKey)}:</b> ${v}</p>` : '';
     }).join('')}
     ${state.flow.includes(5) ? `
     <p style="margin-top:12px;"><b>${t('q5_title')}:</b></p>
@@ -2108,7 +2197,7 @@ function renderReview() {
     </ul>` : ''}
     <p style="margin-top:12px;"><b>${t('q6_title')}:</b> ${state.files.foto ? state.files.foto.name : '—'}</p>
     ${state.flow.includes(7) ? `<p><b>${t('q7_title')}:</b> ${state.files.cv ? state.files.cv.name : '—'}</p>` : ''}
-    <p style="margin-top:12px;color:var(--pink);"><b>✓ Termos aceitos</b></p>
+    <p style="margin-top:12px;color:var(--pink);"><b>✓ ${t('terms_ok')}</b></p>
   `;
   document.getElementById('reviewBox').innerHTML = html;
 }
@@ -2152,7 +2241,7 @@ async function finalSubmit() {
       funcao_cob: funcaoCol,
       apelido: state.details.apelido || '',
       details: state.details,
-      detailsLabels: (DETAILS_FIELDS[state.categoria]||[]).map(f => ({id:f.id, label:f.label})),
+      detailsLabels: (DETAILS_FIELDS[state.categoria]||[]).map(f => ({id:f.id, label:t(f.labelKey)})),
       aceiteTermos: !!state.aceiteTermos,
       opt1: state.selectedSlots[0] || '',
       opt2: state.selectedSlots[1] || '',
@@ -2169,9 +2258,7 @@ async function finalSubmit() {
         if (res && res.success) {
           document.getElementById('successId').textContent = 'ID: ' + res.id;
           const p2 = document.getElementById('successP2');
-          if (p2) p2.textContent = state.flow.includes(5)
-            ? 'A nossa equipe confirmará a data exata da sua sessão de onboarding em até 48h.'
-            : 'A nossa equipe analisará o seu cadastro e entrará em contato em breve com os próximos passos.';
+          if (p2) p2.textContent = state.flow.includes(5) ? t('success_p2') : t('success_p2_alt');
           navigate('success');
         } else {
           toast(t('error_server') + ' ' + (res ? res.message : '???'), true);
