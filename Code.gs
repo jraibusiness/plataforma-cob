@@ -426,6 +426,25 @@ function confirmarAgendamento(id, horario, categoria) {
   return "Agendado com sucesso para " + horario;
 }
 
+function aprovarCandidato(id, categoria) {
+  const cand = getCandidatoById(id, categoria);
+  if (!cand) return "Candidato não encontrado.";
+
+  const ss = SpreadsheetApp.openById(SS_ID);
+  const sheet = ss.getSheetByName(cand.sheet);
+  const d = sheet.getDataRange().getValues();
+  for (let i = 1; i < d.length; i++) {
+    if (d[i][0] == id) {
+      sheet.getRange(i+1, 10).setValue("CONFIRMADO");
+    }
+  }
+
+  const confCand = `<p>Olá <b>${cand.nome}</b>,</p><p>Seu cadastro como <b>${CATEGORIAS[categoria].label}</b> foi aprovado pela equipe do COB!</p><p style="color:#9BA89F;">Em breve entraremos em contato com os próximos passos.</p>`;
+  MailApp.sendEmail({to: cand.email, subject: "Cadastro Aprovado - COB", htmlBody: criarTemplateEmail("CADASTRO APROVADO!", confCand)});
+
+  return "Aprovado com sucesso";
+}
+
 function getOrCreateSubfolder(p, n) {
   let f = p.getFoldersByName(n);
   return f.hasNext() ? f.next() : p.createFolder(n);

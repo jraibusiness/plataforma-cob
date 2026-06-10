@@ -2116,8 +2116,14 @@ function renderCatTable() {
       else if (c.status.toUpperCase().includes('CANCELADO')) { badge = 'b-canceled'; statusText = t('canceled_label'); }
       else { badge = 'b-pending'; statusText = t('pending_label'); pendentes++; }
 
-      const agendaUrl = (c.categoria === 'voluntario' && !c.status.toUpperCase().includes('CONFIRMADO'))
-        ? `<a href="${APP_URL}?view=admin&id=${c.id}&categoria=${c.categoria}" target="_blank" class="action-btn">AGENDAR</a>` : '';
+      let agendaUrl = '';
+      if (!c.status.toUpperCase().includes('CONFIRMADO')) {
+        if (c.categoria === 'voluntario') {
+          agendaUrl = `<a href="${APP_URL}?view=admin&id=${c.id}&categoria=${c.categoria}" target="_blank" class="action-btn">AGENDAR</a>`;
+        } else {
+          agendaUrl = `<button class="action-btn" onclick="aprovarCandidato('${c.id}','${c.categoria}')">APROVAR</button>`;
+        }
+      }
 
       body.innerHTML += `<tr id="row-${c.id}">
         <td data-label="${t('th_date')}" style="color:var(--text-mute);font-size:0.8rem;">${c.data || '-'}</td>
@@ -2228,6 +2234,13 @@ function excluir(id, cat) {
   const row = document.getElementById('row-'+id);
   if (row) row.style.opacity = '0.3';
   google.script.run.withSuccessHandler(() => loadDashboard()).deletarCandidato(id, cat);
+}
+
+function aprovarCandidato(id, cat) {
+  if (!confirm('Confirmar aprovação deste cadastro?')) return;
+  const row = document.getElementById('row-'+id);
+  if (row) row.style.opacity = '0.3';
+  google.script.run.withSuccessHandler(() => loadDashboard()).aprovarCandidato(id, cat);
 }
 
 function switchMod(btn) {
