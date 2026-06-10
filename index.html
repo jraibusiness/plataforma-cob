@@ -1050,6 +1050,26 @@ body {
 #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 #toast.error { border-color: var(--danger); border-left-color: var(--danger); }
 
+/* Modal de detalhes */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: none; align-items: center; justify-content: center;
+  z-index: 9999; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-top: 4px solid var(--pink); border-radius: 12px;
+  padding: 30px; max-width: 560px; width: 100%;
+  max-height: 85vh; overflow-y: auto; position: relative;
+}
+.modal-close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; color: var(--text-mute);
+  font-size: 1.6rem; cursor: pointer; line-height: 1;
+}
+.modal-close:hover { color: var(--pink); }
+
 /* ============================================================
    UTILS
    ============================================================ */
@@ -1111,6 +1131,15 @@ body {
 </nav>
 
 <div id="toast"></div>
+
+<!-- Modal de detalhes do candidato (painel admin) -->
+<div id="detalhesModal" class="modal-overlay" onclick="if(event.target===this)fecharDetalhes()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="fecharDetalhes()">×</button>
+    <h3 style="font-family:'Cormorant Garamond',serif;color:var(--pink);letter-spacing:1px;margin:0 0 16px 0;">DADOS DO CADASTRO</h3>
+    <div id="detalhesModalBody"></div>
+  </div>
+</div>
 
 <!-- ============================================================
      ROUTE: ADMIN APPROVAL (renderizado pelo template se ?view=admin)
@@ -1284,6 +1313,29 @@ function confirmar(id, time, cat) {
             </label>
           </div>
 
+          <!-- STEP 9: Dados específicos por categoria -->
+          <div class="step" data-step="9">
+            <h2 class="q-title">Informações específicas</h2>
+            <p class="q-help">Preencha os campos abaixo. Itens com <b>*</b> são obrigatórios.</p>
+            <div id="detailsFields"></div>
+          </div>
+
+          <!-- STEP 10: Termos de Adesão + LGPD -->
+          <div class="step" data-step="10">
+            <h2 class="q-title">Termo de Adesão e LGPD</h2>
+            <p class="q-help">Leia com atenção e confirme para concluir.</p>
+            <div class="review-box" style="max-height:320px;overflow:auto;font-size:0.82rem;line-height:1.55;">
+              <p>Pelo presente <b>Termo de Adesão</b> manifesto adesão para a realização de Serviço Voluntário no <b>“COB - Conectando Orquestras Brasileiras”</b>. Declaro conhecer que, nos termos da Lei nº 9.608 de 18/02/1998, a minha participação no Serviço Voluntário não é remunerada, não gera vínculo empregatício e nem obrigação trabalhista e previdenciária. O presente Termo tem início a partir de sua aprovação e poderá ser rescindido a qualquer tempo, por iniciativa de ambas as partes.</p>
+              <p>Cedo ao projeto, a título gratuito, os direitos de uso de imagem e som relativos a fotografias e gravações realizadas nas atividades, para difusão midiática (Instagram, Facebook, LinkedIn, site/blog, WhatsApp e nuvem do grupo). Tenho liberdade para revogar esta autorização a qualquer momento. O COB não se responsabiliza por compartilhamento de imagem revogada que circule em mídias externas que não administre.</p>
+              <p>Comprometo-me a manter sigilo sobre informações confidenciais do projeto. Estou ciente de que o COB pode reduzir, atualizar ou encerrar as atividades conforme necessidades internas.</p>
+              <p><b>LGPD:</b> Mediante a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados), o projeto compromete-se a manter a confidencialidade dos dados coletados (nome, telefone, e-mail, data de nascimento). Ao confirmar, você concorda com os termos do COB nesta data.</p>
+            </div>
+            <label style="display:flex;gap:10px;align-items:flex-start;margin-top:16px;cursor:pointer;">
+              <input type="checkbox" id="aceiteTermos" style="margin-top:4px;flex:0 0 auto;width:18px;height:18px;" onchange="state.aceiteTermos=this.checked;">
+              <span style="font-size:0.9rem;">Li e estou <b>ciente e de acordo</b> com o Termo de Adesão ao Serviço Voluntário do COB e com o tratamento dos meus dados pessoais conforme a LGPD.</span>
+            </label>
+          </div>
+
           <!-- STEP 8: Review -->
           <div class="step" data-step="8">
             <h2 class="q-title" data-i18n="q8_title">Revise e confirme</h2>
@@ -1319,7 +1371,7 @@ function confirmar(id, time, cat) {
       <div class="success-icon">✓</div>
       <h1 data-i18n="success_t">DADOS REGISTRADOS COM SUCESSO!</h1>
       <p data-i18n="success_p1">Você receberá um e-mail com o comprovante do envio.</p>
-      <p data-i18n="success_p2">A nossa equipe confirmará a data exata da sua sessão de onboarding em até 48h.</p>
+      <p id="successP2">A nossa equipe confirmará a data exata da sua sessão de onboarding em até 48h.</p>
       <div class="ok-id" id="successId">—</div>
       <p style="font-size:0.8rem;" data-i18n="success_p3">Fique atento à sua caixa de spam.</p>
       <button class="btn btn-ghost mt-3" style="display:inline-flex;width:auto;padding:14px 30px;" data-i18n="back_home" onclick="navigate('home')">VOLTAR AO INÍCIO</button>
@@ -1485,10 +1537,12 @@ const APP_URL = "<?= typeof appUrl !== 'undefined' ? appUrl : '' ?>";
 // Sequência de telas (data-step) por categoria.
 // Embaixador(a) e Representante de Orquestra não passam por
 // "função" (etapa 4) nem por agendamento de onboarding (etapa 5).
+// Etapas: 1 nome, 2 email, 3 whats, 4 função(GT), 9 dados específicos,
+// 5 horários(onboarding), 6 foto, 7 currículo, 10 termos, 8 revisão
 const FLOWS = {
-  voluntario: [1,2,3,4,5,6,7,8],
-  embaixador: [1,2,3,6,7,8],
-  representante: [1,2,3,6,7,8]
+  voluntario:   [1,2,3,4,9,5,6,10,8],
+  embaixador:   [1,2,3,9,6,7,10,8],
+  representante:[1,2,3,9,6,10,8]
 };
 
 const state = {
@@ -1497,6 +1551,8 @@ const state = {
   flow: FLOWS.voluntario,
   selectedSlots: [],
   funcao: '',
+  details: {},
+  aceiteTermos: false,
   files: { foto: null, cv: null },
   filesB64: { foto: null, cv: null },
   adminEmail: '',
@@ -1510,6 +1566,41 @@ const state = {
 
 const FUNCOES = {
   voluntario: ['GT Gestão e Comunicação', 'GT Orquestrando Arquivo', 'Coordenação Geral', 'Outra Frente']
+};
+
+// Campos específicos por categoria (etapa 9) — conforme formulários oficiais do COB
+const DETAILS_FIELDS = {
+  voluntario: [
+    {id:'area_atuacao',     label:'Área de atuação',                                         type:'text',   req:true,  ph:'Ex.: comunicação, arquivo, gestão...'},
+    {id:'tel_recado',       label:'Telefone para recado (nome e contato de alguém próximo)', type:'text',   req:true,  ph:'Ex.: Maria (mãe) — 11 99999-0000'},
+    {id:'carga_horaria',    label:'Carga horária semanal que disponibiliza',                 type:'text',   req:true,  ph:'Ex.: 4h por semana'},
+    {id:'apelido',          label:'Como gostaria de ser chamado(a)? (apelido)',              type:'text',   req:false, ph:'Opcional'},
+    {id:'aniversario',      label:'Você comemora aniversário?',                              type:'radio',  req:true,  opts:['Sim','Não']},
+    {id:'data_aniversario', label:'Caso comemore, informe a data',                           type:'text',   req:false, ph:'DD/MM'},
+    {id:'mencionar_aniv',   label:'Podemos mencionar seu aniversário em nossos meios de comunicação?', type:'radio', req:false, opts:['Sim','Não']}
+  ],
+  embaixador: [
+    {id:'orquestra',        label:'Orquestra, instituição ou projeto do qual faz parte',     type:'text',   req:true},
+    {id:'funcao_emb',       label:'Qual a sua função?',                                       type:'text',   req:true},
+    {id:'apelido',          label:'Como gostaria de ser chamado(a)? (apelido)',              type:'text',   req:false, ph:'Opcional'},
+    {id:'aniversario',      label:'Você comemora aniversário?',                              type:'radio',  req:true,  opts:['Sim','Não']},
+    {id:'data_aniversario', label:'Caso comemore, informe a data',                           type:'text',   req:false, ph:'DD/MM'},
+    {id:'parabenizar',      label:'Podemos parabenizá-lo(a) em nossos meios de comunicação?',type:'radio',  req:false, opts:['Sim','Não']}
+  ],
+  representante: [
+    {id:'cidade',     label:'Cidade',  type:'text', req:true},
+    {id:'estado',     label:'Estado',  type:'text', req:true},
+    {id:'raca',       label:'Como você se identifica? (cor/raça)', type:'select', req:true, opts:['Amarela','Branca','Indígena','Negra','Parda','Prefiro não responder','Outro']},
+    {id:'genero',     label:'Como você se identifica? (gênero)',   type:'select', req:true, opts:['Mulher Cis','Homem Cis','Mulher Trans','Homem Trans','Pessoa Não Binária','Prefiro não responder','Outro']},
+    {id:'rede_social',label:'Rede social', type:'text', req:false, ph:'Opcional'},
+    {id:'formacao',   label:'Área de formação escolar ou acadêmica', type:'text', req:false},
+    {id:'orquestra',  label:'Orquestra ou projeto que representa ou faz parte', type:'text', req:true},
+    {id:'cargo',      label:'Cargo atual', type:'text', req:true},
+    {id:'apelido',    label:'Como te chamamos? (apelido)', type:'text', req:false, ph:'Opcional'},
+    {id:'experiencia',label:'Comente sobre sua experiência em orquestras e sua expectativa/motivação no COB', type:'textarea', req:true},
+    {id:'dores',      label:'Pontos a serem desenvolvidos ou "dores" do projeto/organização que você faz parte', type:'textarea', req:true, ph:'Ex.: falta de recursos, captação, abertura de CNPJ, equipe reduzida...'},
+    {id:'palestrar',  label:'Teria interesse em palestrar em algum de nossos encontros?', type:'select', req:true, opts:['Sim','Não','Talvez']}
+  ]
 };
 
 // ============================================================
@@ -1712,6 +1803,8 @@ function startCategory(cat) {
   state.step = 1;
   state.selectedSlots = [];
   state.funcao = '';
+  state.details = {};
+  state.aceiteTermos = false;
   state.files = { foto: null, cv: null };
   state.filesB64 = { foto: null, cv: null };
 
@@ -1759,6 +1852,45 @@ function renderFuncoes() {
 }
 
 // ============================================================
+// DADOS ESPECÍFICOS POR CATEGORIA (etapa 9)
+// ============================================================
+function renderDetails() {
+  const box = document.getElementById('detailsFields');
+  if (!box) return;
+  const fields = DETAILS_FIELDS[state.categoria] || [];
+  let html = '';
+  fields.forEach(f => {
+    const val = state.details[f.id] || '';
+    const star = f.req ? ' <span style="color:var(--pink);">*</span>' : '';
+    html += `<div style="margin-bottom:18px;">
+      <label style="display:block;margin-bottom:6px;font-size:0.92rem;">${f.label}${star}</label>`;
+    if (f.type === 'text') {
+      html += `<input class="input" type="text" data-field="${f.id}" value="${val.replace(/"/g,'&quot;')}" placeholder="${f.ph||''}" oninput="state.details['${f.id}']=this.value;">`;
+    } else if (f.type === 'textarea') {
+      html += `<textarea class="input" data-field="${f.id}" rows="3" placeholder="${f.ph||''}" style="resize:vertical;min-height:80px;" oninput="state.details['${f.id}']=this.value;">${val}</textarea>`;
+    } else if (f.type === 'select') {
+      html += `<select class="select" data-field="${f.id}" onchange="state.details['${f.id}']=this.value;" style="width:100%;">
+        <option value="">Selecione...</option>
+        ${f.opts.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+      </select>`;
+    } else if (f.type === 'radio') {
+      html += `<div class="chip-grid">
+        ${f.opts.map(o => `<div class="chip ${val===o?'selected':''}" onclick="setDetailRadio('${f.id}','${o}',this)">${o}</div>`).join('')}
+      </div>`;
+    }
+    html += `</div>`;
+  });
+  box.innerHTML = html;
+}
+
+function setDetailRadio(id, val, el) {
+  state.details[id] = val;
+  const grid = el.parentNode;
+  grid.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ============================================================
 // STEP NAVIGATION
 // ============================================================
 function showStep(n) {
@@ -1778,6 +1910,8 @@ function showStep(n) {
   document.getElementById('btnNextMobile').textContent = isLast ? t('btn_submit') : t('btn_next');
 
   if (dataStep === 5) renderSlots();
+  if (dataStep === 9) renderDetails();
+  if (dataStep === 10) { const cb = document.getElementById('aceiteTermos'); if (cb) cb.checked = state.aceiteTermos; }
   if (dataStep === 8) renderReview();
   window.scrollTo({top:0, behavior:'smooth'});
 }
@@ -1830,6 +1964,19 @@ function validateCurrentStep() {
   }
   if (s === 7) {
     if (!state.files.cv) { toast(t('fields_required'), true); return false; }
+    return true;
+  }
+  if (s === 9) {
+    const fields = DETAILS_FIELDS[state.categoria] || [];
+    for (const f of fields) {
+      if (f.req && !(state.details[f.id] && state.details[f.id].toString().trim())) {
+        toast(t('fields_required'), true); return false;
+      }
+    }
+    return true;
+  }
+  if (s === 10) {
+    if (!state.aceiteTermos) { toast('É necessário aceitar os termos para continuar.', true); return false; }
     return true;
   }
   return true;
@@ -1950,13 +2097,18 @@ function renderReview() {
     ${eEx ? `<p><b>${t('q2_extra')}:</b> ${eEx}</p>` : ''}
     <p><b>WhatsApp:</b> ${document.getElementById('whatsapp').value}</p>
     ${state.flow.includes(4) ? `<p><b>${t('q4_title')}</b> ${state.funcao}</p>` : ''}
+    ${(DETAILS_FIELDS[state.categoria]||[]).map(f => {
+      const v = state.details[f.id];
+      return v ? `<p><b>${f.label}:</b> ${v}</p>` : '';
+    }).join('')}
     ${state.flow.includes(5) ? `
     <p style="margin-top:12px;"><b>${t('q5_title')}:</b></p>
     <ul style="margin:4px 0 0 0;padding-left:22px;color:var(--text-mute);">
       ${state.selectedSlots.map(s => `<li>${s}</li>`).join('')}
     </ul>` : ''}
     <p style="margin-top:12px;"><b>${t('q6_title')}:</b> ${state.files.foto ? state.files.foto.name : '—'}</p>
-    <p><b>${t('q7_title')}:</b> ${state.files.cv ? state.files.cv.name : '—'}</p>
+    ${state.flow.includes(7) ? `<p><b>${t('q7_title')}:</b> ${state.files.cv ? state.files.cv.name : '—'}</p>` : ''}
+    <p style="margin-top:12px;color:var(--pink);"><b>✓ Termos aceitos</b></p>
   `;
   document.getElementById('reviewBox').innerHTML = html;
 }
@@ -1984,6 +2136,12 @@ async function finalSubmit() {
     const fotoB64 = await fileToB64(state.files.foto);
     const cvB64 = await fileToB64(state.files.cv);
 
+    // Função exibida no painel varia por categoria
+    let funcaoCol = state.funcao;
+    if (state.categoria === 'embaixador') funcaoCol = state.details.funcao_emb || '';
+    else if (state.categoria === 'representante') funcaoCol = state.details.cargo || '';
+    else if (state.categoria === 'voluntario' && state.details.area_atuacao) funcaoCol = state.funcao + ' — ' + state.details.area_atuacao;
+
     const payload = {
       categoria: state.categoria,
       nome: document.getElementById('nome').value,
@@ -1991,7 +2149,11 @@ async function finalSubmit() {
       email: document.getElementById('email').value,
       email_extra: document.getElementById('email_extra').value,
       whatsapp: document.getElementById('whatsapp').value,
-      funcao_cob: state.funcao,
+      funcao_cob: funcaoCol,
+      apelido: state.details.apelido || '',
+      details: state.details,
+      detailsLabels: (DETAILS_FIELDS[state.categoria]||[]).map(f => ({id:f.id, label:f.label})),
+      aceiteTermos: !!state.aceiteTermos,
       opt1: state.selectedSlots[0] || '',
       opt2: state.selectedSlots[1] || '',
       opt3: state.selectedSlots[2] || '',
@@ -2006,6 +2168,10 @@ async function finalSubmit() {
         document.getElementById('btnNextMobile').disabled = false;
         if (res && res.success) {
           document.getElementById('successId').textContent = 'ID: ' + res.id;
+          const p2 = document.getElementById('successP2');
+          if (p2) p2.textContent = state.flow.includes(5)
+            ? 'A nossa equipe confirmará a data exata da sua sessão de onboarding em até 48h.'
+            : 'A nossa equipe analisará o seu cadastro e entrará em contato em breve com os próximos passos.';
           navigate('success');
         } else {
           toast(t('error_server') + ' ' + (res ? res.message : '???'), true);
@@ -2133,6 +2299,7 @@ function renderCatTable() {
         <td data-label="${t('th_anx')}">
           ${c.foto ? `<a href="${c.foto}" target="_blank" class="action-btn">FOTO</a>` : ''}
           ${c.cv ? `<a href="${c.cv}" target="_blank" class="action-btn">CV</a>` : ''}
+          ${c.detalhes ? `<button class="action-btn" onclick="verDetalhes('${c.id}','${c.categoria}')">DADOS</button>` : ''}
           ${agendaUrl}
           <button class="action-btn danger" onclick="excluir('${c.id}','${c.categoria}')">×</button>
         </td>
@@ -2234,6 +2401,27 @@ function excluir(id, cat) {
   const row = document.getElementById('row-'+id);
   if (row) row.style.opacity = '0.3';
   google.script.run.withSuccessHandler(() => loadDashboard()).deletarCandidato(id, cat);
+}
+
+function verDetalhes(id, cat) {
+  const lista = (state.cache && state.cache.candidaturas[cat]) || [];
+  const c = lista.find(x => x.id === id);
+  if (!c) return;
+  const linhas = (c.detalhes || '').split('\n').filter(Boolean)
+    .map(l => `<p style="margin:6px 0;"><b>${l.split(':')[0]}:</b>${l.substring(l.indexOf(':')+1)}</p>`).join('');
+  const html = `
+    <h4 style="margin-top:0;color:var(--pink);">${c.nome}${c.apelido ? ' ("'+c.apelido+'")' : ''}</h4>
+    <p style="margin:6px 0;"><b>E-mail:</b> ${c.email||'—'}</p>
+    <p style="margin:6px 0;"><b>WhatsApp:</b> ${c.whatsapp||'—'}</p>
+    <hr style="border-top:1px solid var(--border);margin:14px 0;">
+    ${linhas || '<p style="color:var(--text-mute);">Sem dados específicos.</p>'}
+    ${c.termos ? `<hr style="border-top:1px solid var(--border);margin:14px 0;"><p style="margin:6px 0;color:var(--text-mute);font-size:0.8rem;"><b>Termos:</b> ${c.termos}</p>` : ''}`;
+  document.getElementById('detalhesModalBody').innerHTML = html;
+  document.getElementById('detalhesModal').classList.add('show');
+}
+
+function fecharDetalhes() {
+  document.getElementById('detalhesModal').classList.remove('show');
 }
 
 function aprovarCandidato(id, cat) {

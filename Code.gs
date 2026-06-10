@@ -15,7 +15,7 @@ const CATEGORIAS = {
   representante: { sheet: "Representantes", label: "Representante de Orquestra",   folder: "REPRESENTANTES" }
 };
 
-const HEADERS_BASE = ["ID","DATA","NOME","SOBRENOME","EMAIL","EMAIL_EXTRA","WHATSAPP","FUNCAO","FOTO_URL","STATUS_AGENDA","CV_URL","EVENT_ID"];
+const HEADERS_BASE = ["ID","DATA","NOME","SOBRENOME","EMAIL","EMAIL_EXTRA","WHATSAPP","FUNCAO","FOTO_URL","STATUS_AGENDA","CV_URL","EVENT_ID","APELIDO","DETALHES","TERMOS"];
 
 // ============================================================
 // SETUP - Garante todas as abas necessárias
@@ -46,6 +46,12 @@ function garantirAbasBase() {
       let s = ss.insertSheet(sheetName);
       s.appendRow(HEADERS_BASE);
       s.getRange(1, 1, 1, HEADERS_BASE.length).setFontWeight("bold");
+    } else {
+      // Migração: garante as colunas novas (APELIDO/DETALHES/TERMOS) em abas antigas
+      let s = ss.getSheetByName(sheetName);
+      if (s.getLastColumn() < HEADERS_BASE.length) {
+        s.getRange(1, 1, 1, HEADERS_BASE.length).setValues([HEADERS_BASE]).setFontWeight("bold");
+      }
     }
   });
 }
@@ -126,6 +132,9 @@ function getDashboardData() {
           foto: data[i][8],
           status: status,
           cv: data[i][10],
+          apelido: data[i][12] || "",
+          detalhes: data[i][13] || "",
+          termos: data[i][14] || "",
           categoria: key,
           categoriaLabel: CATEGORIAS[key].label
         });
@@ -213,6 +222,13 @@ function processFormBase64(payload) {
       ? `1: ${payload.opt1} | 2: ${payload.opt2} | 3: ${payload.opt3}`
       : "PENDENTE";
 
+    // Monta texto legível dos dados específicos da categoria
+    const detalhesTexto = montarDetalhes(payload);
+    const apelido = payload.apelido || "";
+    const termos = payload.aceiteTermos
+      ? "Aceito em " + Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy HH:mm")
+      : "NÃO ACEITO";
+
     sheet.appendRow([
       uniqueId,
       new Date(),
@@ -225,7 +241,10 @@ function processFormBase64(payload) {
       fotoUrl,
       statusInicial,
       cvUrl,
-      ""
+      "",
+      apelido,
+      detalhesTexto,
+      termos
     ]);
 
     enviarNotificacoes({
@@ -239,13 +258,27 @@ function processFormBase64(payload) {
       whatsapp: payload.whatsapp,
       opt1: payload.opt1,
       opt2: payload.opt2,
-      opt3: payload.opt3
+      opt3: payload.opt3,
+      detalhes: detalhesTexto
     }, uniqueId);
 
     return { success: true, id: uniqueId };
   } catch(e) {
     return { success: false, message: e.toString() };
   }
+}
+
+// Monta um texto legível "Rótulo: valor" a partir dos dados específicos
+function montarDetalhes(payload) {
+  if (!payload.details || !payload.detailsLabels) return "";
+  const linhas = [];
+  payload.detailsLabels.forEach(function(f) {
+    const v = payload.details[f.id];
+    if (v && v.toString().trim()) {
+      linhas.push(f.label + ": " + v);
+    }
+  });
+  return linhas.join("\n");
 }
 
 // ============================================================
@@ -261,6 +294,9 @@ function enviarNotificacoes(dados, id) {
   const emailExtraHTML = dados.email_extra ? `<p style="margin:8px 0;"><b>E-mail Adicional:</b> ${dados.email_extra}</p>` : "";
   const temAgendamento = !!(dados.opt1 && dados.opt2 && dados.opt3);
   const funcaoHTML = dados.funcao_cob ? `<p style="margin:8px 0;"><b>Função Pretendida:</b> ${dados.funcao_cob}</p>` : "";
+  const detalhesHTML = dados.detalhes
+    ? `<p style="color:#E8B4BC;margin-bottom:5px;margin-top:20px;"><b>Informações Específicas:</b></p>` + dados.detalhes.split("\n").map(function(l){ return `<p style="margin:4px 0;color:#9BA89F;">${l}</p>`; }).join("")
+    : "";
   const horariosHTML = temAgendamento
     ? `<p style="color:#E8B4BC;margin-bottom:5px;margin-top:20px;"><b>Horários Sugeridos:</b></p><ul style="margin-top:0;color:#9BA89F;padding-left:20px;"><li style="margin-bottom:5px;">${dados.opt1}</li><li style="margin-bottom:5px;">${dados.opt2}</li><li style="margin-bottom:5px;">${dados.opt3}</li></ul>`
     : "";
@@ -274,7 +310,7 @@ function enviarNotificacoes(dados, id) {
   const acaoAdmin = temAgendamento
     ? `<p style="font-size:1rem;color:#9BA89F;">O candidato sugeriu 3 opções de horários. Para confirmar o agendamento no Google Calendar, acesse o painel:</p><div style="text-align:center;margin:35px 0 20px 0;"><a href="${appUrl}?view=admin&id=${id}&categoria=${dados.categoria}" style="background:#E8B4BC;color:#0A1812;padding:15px 35px;text-decoration:none;border-radius:50px;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:16px;display:inline-block;letter-spacing:1px;">APROVAR AGENDAMENTO</a></div>`
     : `<p style="font-size:1rem;color:#9BA89F;">Acesse o painel administrativo para mais detalhes do cadastro.</p>`;
-  const conteudoAdmin = `<h2 style="color:#F5EFE6;font-family:'Inter',sans-serif;margin:0 0 15px 0;">Novo cadastro: <span style="color:#E8B4BC;">${dados.nome} ${dados.sobrenome}</span></h2><p style="font-size:1rem;color:#9BA89F;margin-bottom:20px;">Categoria: <b style="color:#F5EFE6;">${dados.categoriaLabel}</b></p>${funcaoHTML}<hr style="border-top:1px solid #1F3D30;margin:25px 0;">${acaoAdmin}`;
+  const conteudoAdmin = `<h2 style="color:#F5EFE6;font-family:'Inter',sans-serif;margin:0 0 15px 0;">Novo cadastro: <span style="color:#E8B4BC;">${dados.nome} ${dados.sobrenome}</span></h2><p style="font-size:1rem;color:#9BA89F;margin-bottom:20px;">Categoria: <b style="color:#F5EFE6;">${dados.categoriaLabel}</b></p>${funcaoHTML}${detalhesHTML}<hr style="border-top:1px solid #1F3D30;margin:25px 0;">${acaoAdmin}`;
   MailApp.sendEmail({to: ADMIN_EMAIL, subject: "AÇÃO REQUERIDA: Novo cadastro COB (" + dados.categoriaLabel + ") - " + dados.nome, htmlBody: criarTemplateEmail("APROVAÇÃO PENDENTE", conteudoAdmin)});
 }
 
