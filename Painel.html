@@ -1,0 +1,80 @@
+<section class="route" id="route-dashboard">
+  <div class="dash-shell">
+    <aside class="dash-sidebar" id="dashSidebar">
+      <button class="dash-menu-item active" data-mod="rh" data-i18n="menu_rh">RECURSOS HUMANOS</button>
+      <button class="dash-menu-item" data-mod="agenda" data-i18n="menu_cal">CALENDÁRIO DE ONBOARDINGS</button>
+      <button class="dash-menu-item" data-mod="config" data-i18n="menu_cfg">CONFIGURAÇÕES E ACESSOS</button>
+      <div style="flex-grow:1;"></div>
+      <button class="nav-btn" id="btnLogout" style="border-color:#3a1a1a;color:var(--danger);" data-i18n="logout">SAIR DO SISTEMA</button>
+    </aside>
+
+    <div class="dash-content">
+      <div class="dash-module active" id="mod-rh">
+        <div class="dash-header">
+          <h1 data-i18n="menu_rh">RECURSOS HUMANOS</h1>
+          <button class="btn-atualizar" data-refresh data-i18n-attr="title|tip_refresh"><span id="novosN">0</span> <span data-i18n="refresh_new">cadastro(s) novo(s) — atualizar</span></button>
+        </div>
+        <div class="tabs" id="catTabs">
+          <button class="tab active" data-cat="todos" data-i18n-attr="title|tip_tab"><span data-i18n="cat_all">Todos</span> <span class="count" id="cnt-todos">0</span></button>
+          <button class="tab" data-cat="voluntario" data-i18n-attr="title|tip_tab"><span data-i18n="cat_vol_title">Voluntário(a)</span> <span class="count" id="cnt-voluntario">0</span></button>
+          <button class="tab" data-cat="embaixador" data-i18n-attr="title|tip_tab"><span data-i18n="cat_emb_title">Embaixador(a)</span> <span class="count" id="cnt-embaixador">0</span></button>
+          <button class="tab" data-cat="representante" data-i18n-attr="title|tip_tab"><span data-i18n="cat_rep_title">Representante</span> <span class="count" id="cnt-representante">0</span></button>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px;">
+          <div class="stat-card"><h4 data-i18n="stat_pending">PENDENTES</h4><div class="val" id="statPend">0</div></div>
+          <div class="stat-card"><h4 data-i18n="stat_confirmed">CONFIRMADOS</h4><div class="val" id="statConf">0</div></div>
+          <div class="stat-card"><h4 data-i18n="stat_total">TOTAL</h4><div class="val" id="statTotal">0</div></div>
+        </div>
+        <div id="diagStrip" class="diag-strip"></div>
+        <div class="table-wrap">
+          <table class="dash-table">
+            <colgroup><col class="c-data"><col class="c-cand"><col class="c-func"><col class="c-stat"><col class="c-acao"></colgroup>
+            <thead><tr>
+              <th data-i18n="th_date">DATA</th><th data-i18n="th_cand">CANDIDATO(A)</th>
+              <th data-i18n="th_func">FUNÇÃO</th><th data-i18n="th_stat">STATUS</th><th data-i18n="th_anx">AÇÕES</th>
+            </tr></thead>
+            <tbody id="dashBody"><tr><td colspan="5"><div class="loader-line"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="dash-module" id="mod-agenda">
+        <div class="dash-header">
+          <h1 data-i18n="menu_cal">CALENDÁRIO DE ONBOARDINGS</h1>
+          <button class="btn-atualizar" data-refresh data-i18n-attr="title|tip_refresh"><span id="novosN">0</span> <span data-i18n="refresh_new">cadastro(s) novo(s) — atualizar</span></button>
+        </div>
+        <div class="table-wrap">
+          <table class="dash-table">
+            <thead><tr>
+              <th data-i18n="th_when_date">DATA</th><th data-i18n="th_when_hour">HORA</th>
+              <th data-i18n="th_event">EVENTO</th><th data-i18n="th_guests">CONVIDADO</th>
+              <th data-i18n="th_anx">AÇÕES</th>
+            </tr></thead>
+            <tbody id="dashAgendaBody"><tr><td colspan="5"><div class="loader-line"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="dash-module" id="mod-config">
+        <div class="dash-header">
+          <h1 data-i18n="menu_cfg">CONFIGURAÇÕES E ACESSOS</h1>
+          <button class="btn-atualizar" data-refresh data-i18n-attr="title|tip_refresh"><span id="novosN">0</span> <span data-i18n="refresh_new">cadastro(s) novo(s) — atualizar</span></button>
+        </div>
+        <div class="cfg-grid">
+          <div class="table-wrap">
+            <table class="dash-table">
+              <thead><tr><th data-i18n="th_admins">E-MAILS AUTORIZADOS</th><th data-i18n="th_action">AÇÃO</th></tr></thead>
+              <tbody id="adminsBody"><tr><td colspan="2"><div class="loader-line"></div></td></tr></tbody>
+            </table>
+          </div>
+          <div class="org-card">
+            <h4 data-i18n="new_admin">NOVO ADMIN</h4>
+            <p style="font-size:.8rem;color:var(--text-mute);margin:6px 0 14px;font-weight:400;" data-i18n="new_admin_d">O e-mail inserido poderá receber códigos de acesso.</p>
+            <input class="input" id="newAdminEmail" data-i18n-attr="placeholder|new_admin_ph" placeholder="email@exemplo.com" style="margin-bottom:12px;">
+            <button class="btn btn-primary btn-block" id="btnAddAdmin" data-i18n="new_admin_btn">CONCEDER ACESSO</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -33,6 +33,9 @@
  * rode configurarProprietario(...) uma única vez. Os valores gravados em
  * Script Properties têm prioridade sobre estes padrões.
  */
+/** Carimbo de versão — confirma qual código está realmente publicado. */
+const VERSAO = "2026-08-27 · v5";
+
 const DEF_FOLDER_ID = "1jz6vfaFTkRqNP7FvrT4ECDrl5l4DHh2C";
 const DEF_SS_ID     = "1NIzil2c1OUhKaYT6jUE1PaqilHWiMb8myHVpYqOuVts";
 const DEF_ADMIN     = "jr.conductor83@gmail.com";
@@ -90,11 +93,12 @@ const CATEGORIAS = {
   representante: { sheet: "Representantes", label: "Representante de Orquestra", folder: "REPRESENTANTES", agenda: false }
 };
 
-const HEADERS_BASE = ["ID","DATA","NOME","SOBRENOME","EMAIL","EMAIL_EXTRA","WHATSAPP","FUNCAO","FOTO_URL","STATUS_AGENDA","CV_URL","EVENT_ID","APELIDO","DETALHES","TERMOS"];
+const HEADERS_BASE = ["ID","DATA","NOME","SOBRENOME","EMAIL","EMAIL_EXTRA","WHATSAPP","FUNCAO","FOTO_URL","STATUS_AGENDA","CV_URL","EVENT_ID","APELIDO","DETALHES","TERMOS","LEMBRETES"];
 
 // Índices de coluna (0-based) — usar sempre estas constantes, nunca números soltos
 const C = { ID:0, DATA:1, NOME:2, SOBRENOME:3, EMAIL:4, EMAIL_EXTRA:5, WHATSAPP:6,
-            FUNCAO:7, FOTO:8, STATUS:9, CV:10, EVENT_ID:11, APELIDO:12, DETALHES:13, TERMOS:14 };
+            FUNCAO:7, FOTO:8, STATUS:9, CV:10, EVENT_ID:11, APELIDO:12, DETALHES:13, TERMOS:14,
+            LEMBRETES:15 };
 
 const CFG_PADRAO = { inicio: 10, fim: 18, horizonte: 21, antecedencia: 24, sabado: false };
 
@@ -103,8 +107,19 @@ function TZ_() { return Session.getScriptTimeZone() || "America/Sao_Paulo"; }
 // ============================================================
 // SETUP
 // ============================================================
+/**
+ * O Sheets exibe datas no fuso DA PLANILHA, não no fuso do script.
+ * Planilha criada em locale americano mostrava o cadastro ~4h atrasado.
+ */
+function _garantirFusoPlanilha(ss) {
+  try {
+    if (ss.getSpreadsheetTimeZone() !== TZ_()) ss.setSpreadsheetTimeZone(TZ_());
+  } catch (e) { Logger.log("Fuso da planilha: " + e); }
+}
+
 function garantirAbasBase() {
   const ss = SpreadsheetApp.openById(SS_ID_());
+  _garantirFusoPlanilha(ss);
 
   if (!ss.getSheetByName("Admins")) {
     const s = ss.insertSheet("Admins");
@@ -135,11 +150,28 @@ function garantirAbasBase() {
     } else if (s.getLastColumn() < HEADERS_BASE.length) {
       s.getRange(1, 1, 1, HEADERS_BASE.length).setValues([HEADERS_BASE]).setFontWeight("bold");
     }
+    // Data sempre em formato brasileiro, independente do locale da planilha
+    try { s.getRange(2, C.DATA + 1, Math.max(s.getMaxRows() - 1, 1), 1).setNumberFormat("dd/MM/yyyy HH:mm"); }
+    catch (e) { Logger.log("Formato da coluna DATA: " + e); }
   });
 }
 
 function _garantirConfigAgenda(ss) {
   let s = ss.getSheetByName("Configuracoes_Agenda");
+
+  // A versão antiga gravava ["10:00","18:00"] direto na linha 1, sem cabeçalho.
+  // Isso fazia a configuração ser lida da linha 2 (vazia) e, pior, o "10:00"
+  // era interpretado como 1000. Aqui a aba é normalizada.
+  if (s && String(s.getRange("A1").getDisplayValue()).trim().toUpperCase() !== "HORA_INICIO") {
+    s.clear();
+    s.appendRow(["HORA_INICIO","HORA_FIM","DIAS_HORIZONTE","ANTECEDENCIA_HORAS","INCLUIR_SABADO"]);
+    s.getRange(1, 1, 1, 5).setFontWeight("bold");
+    s.appendRow([CFG_PADRAO.inicio, CFG_PADRAO.fim, CFG_PADRAO.horizonte, CFG_PADRAO.antecedencia, "NAO"]);
+    s.getRange("A4").setValue("Editar apenas a linha 2. Use números inteiros (10, 18), não 10:00.");
+    Logger.log("Configuracoes_Agenda estava em formato antigo e foi normalizada.");
+    return s;
+  }
+
   if (!s) {
     s = ss.insertSheet("Configuracoes_Agenda");
     s.appendRow(["HORA_INICIO","HORA_FIM","DIAS_HORIZONTE","ANTECEDENCIA_HORAS","INCLUIR_SABADO"]);
@@ -154,10 +186,22 @@ function _lerConfigAgenda() {
   try {
     const s = _garantirConfigAgenda(SpreadsheetApp.openById(SS_ID_()));
     const v = s.getRange(2, 1, 1, 5).getDisplayValues()[0];
-    const num = function (x, pad) { const n = parseInt(String(x).replace(/\D/g, ""), 10); return isNaN(n) ? pad : n; };
+    // Lê a HORA. "10:00" precisa virar 10, não 1000 — por isso corta no primeiro
+    // separador antes de remover o que não for dígito.
+    const hora = function (x, pad) {
+      const bruto = String(x == null ? "" : x).trim();
+      if (!bruto) return pad;
+      const n = parseInt(bruto.split(/[:h\s]/)[0].replace(/\D/g, ""), 10);
+      return isNaN(n) ? pad : n;
+    };
+    // Lê um número simples (dias, horas de antecedência)
+    const num = function (x, pad) {
+      const n = parseInt(String(x == null ? "" : x).replace(/\D/g, ""), 10);
+      return isNaN(n) ? pad : n;
+    };
     return {
-      inicio:       Math.min(23, Math.max(0,  num(v[0], CFG_PADRAO.inicio))),
-      fim:          Math.min(24, Math.max(1,  num(v[1], CFG_PADRAO.fim))),
+      inicio:       Math.min(23, Math.max(0,  hora(v[0], CFG_PADRAO.inicio))),
+      fim:          Math.min(24, Math.max(1,  hora(v[1], CFG_PADRAO.fim))),
       horizonte:    Math.min(90, Math.max(1,  num(v[2], CFG_PADRAO.horizonte))),
       antecedencia: Math.min(720, Math.max(0, num(v[3], CFG_PADRAO.antecedencia))),
       sabado:       /^s/i.test(String(v[4] || "").trim())
@@ -266,6 +310,16 @@ function encerrarSessao(sessao) {
   return { success: true };
 }
 
+/**
+ * Inclui outro arquivo HTML do projeto.
+ * O frontend é dividido em: Estilo, Formulario, Painel, Textos e Script.
+ * Arquivos incluídos NÃO podem conter scriptlets (<? ?>) — os valores vindos
+ * do servidor ficam todos no index.html.
+ */
+function include(nome) {
+  return HtmlService.createHtmlOutputFromFile(nome).getContent();
+}
+
 // ============================================================
 // ROTEAMENTO
 // ============================================================
@@ -300,7 +354,8 @@ function doGet(e) {
 
   t.appUrl = ScriptApp.getService().getUrl();
   t.viewMode = view;
-  t.abrirPainel = (view === "painel");   // link do e-mail cai direto no login do painel
+  t.abrirPainel = (view === "painel");
+  t.versao = VERSAO;   // link do e-mail cai direto no login do painel
   return t.evaluate()
     .setTitle("Plataforma COB")
     .addMetaTag("viewport", "width=device-width, initial-scale=1, viewport-fit=cover")
@@ -323,6 +378,13 @@ function getDashboardData(sessao) {
   catch (err) { avisos.push("Não foi possível verificar as abas: " + err); }
 
   const ss = SpreadsheetApp.openById(SS_ID_());
+
+  // Traz para a planilha o que tiver sido alterado direto no Google Calendar
+  let reconciliadas = [];
+  try { reconciliadas = _reconciliarAgenda(ss); }
+  catch (err) { avisos.push("Reconciliação com a agenda: " + err); }
+  reconciliadas.forEach(function (m) { avisos.push("Agenda → planilha · " + m); });
+
   const candidaturas = {};
   const agenda = [];
   const diagnostico = [];
@@ -368,11 +430,15 @@ function getDashboardData(sessao) {
         if (m) {
           const partes = m[1].split(/\s+às\s+/i);
           agenda.push({
+            id: id,
             titulo: "COB · Onboarding " + r[C.NOME] + " (" + CATEGORIAS[key].label + ")",
+            nome: (String(r[C.NOME] || "") + " " + String(r[C.SOBRENOME] || "")).trim(),
             data: (partes[0] || m[1]).trim(),
             hora: (partes[1] || "—").trim(),
+            quando: m[1].trim(),
             convidados: r[C.EMAIL],
-            categoria: key
+            categoria: key,
+            categoriaLabel: CATEGORIAS[key].label
           });
         }
       }
@@ -398,6 +464,11 @@ function getDashboardData(sessao) {
   let admins = [];
   try { admins = _emailsAutorizados(); } catch (err) { avisos.push("Admins: " + err); }
 
+  agenda.sort(function (a, b) {
+    try { return parseDate(a.quando).getTime() - parseDate(b.quando).getTime(); }
+    catch (e) { return 0; }
+  });
+
   return {
     success: true,
     candidaturas: candidaturas,
@@ -408,6 +479,7 @@ function getDashboardData(sessao) {
     avisos: avisos,
     planilha: ss.getName(),
     planilhaUrl: ss.getUrl(),
+    versao: VERSAO,
     lido: Utilities.formatDate(new Date(), TZ_(), "dd/MM/yyyy 'às' HH:mm")
   };
 }
@@ -525,7 +597,7 @@ function processFormBase64(payload) {
       uniqueId, new Date(), nome, sobrenome, email, emailExtra,
       "'" + String(payload.whatsapp || ""),       // apóstrofo: senão o Sheets interpreta "+" como fórmula
       String(payload.funcao_cob || ""), fotoUrl, status, cvUrl, "",
-      String(payload.apelido || ""), detalhes, termos
+      String(payload.apelido || ""), detalhes, termos, ""
     ]);
 
     try {
@@ -791,6 +863,7 @@ function getCandidatoById(id, categoria) {
           id: String(id), nome: d[i][C.NOME], sobrenome: d[i][C.SOBRENOME],
           email: d[i][C.EMAIL], emailExtra: d[i][C.EMAIL_EXTRA],
           funcao: d[i][C.FUNCAO], opcoes: String(d[i][C.STATUS] || ""),
+          eventId: String(d[i][C.EVENT_ID] || ""),
           linha: i + 1, sheet: sheet.getSheetName(), categoria: chaves[k]
         };
       }
@@ -806,7 +879,7 @@ function getAvailableTimes() {
   try {
     const cfg = _lerConfigAgenda();
     const tz = TZ_();
-    const dias = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    const dias = DIAS_SEMANA;
     const agora = new Date();
     const minimo = new Date(agora.getTime() + cfg.antecedencia * 3600000);
 
@@ -971,7 +1044,7 @@ function aprovarCandidato(sessao, id, categoria) {
 // DIAGNÓSTICO — rodar no editor antes de publicar
 // ============================================================
 function verificarInstalacao() {
-  const r = [];
+  const r = ["VERSÃO PUBLICADA: " + VERSAO, ""];
   const ok = function (n, f) { try { f(); r.push("OK    · " + n); } catch (e) { r.push("FALHA · " + n + " → " + e); } };
 
   ok("Planilha (leitura)", function () { SpreadsheetApp.openById(SS_ID_()).getName(); });
@@ -1005,6 +1078,294 @@ function verificarInstalacao() {
   return txt;
 }
 
+// ============================================================
+// AGENDA — reagendar, cancelar e reconciliar com o Calendar
+// ============================================================
+const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+function _rotuloHorario(data) {
+  const tz = TZ_();
+  return Utilities.formatDate(data, tz, "dd/MM/yyyy")
+    + " (" + DIAS_SEMANA[data.getDay()] + ") às "
+    + Utilities.formatDate(data, tz, "HH:mm");
+}
+
+/** Converte "2026-09-10T14:30" (input datetime-local) em Date no fuso do script. */
+function _parseISOLocal(iso) {
+  const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) throw new Error("Data/hora inválida: " + iso);
+  return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], 0, 0);
+}
+
+/**
+ * FONTE ÚNICA DE VERDADE: a planilha manda.
+ * O Calendar, porém, pode ser editado à mão. Esta função lê os eventos ainda
+ * vinculados (coluna EVENT_ID) e traz de volta para a planilha qualquer mudança
+ * feita direto na agenda — evita as três versões divergentes (planilha / agenda / e-mail).
+ */
+function _reconciliarAgenda(ss) {
+  const mudancas = [];
+  let cal = null;
+  try { cal = CAL_(); } catch (e) { return mudancas; }
+
+  Object.keys(CATEGORIAS).forEach(function (key) {
+    let aba;
+    try { aba = _acharAba(ss, CATEGORIAS[key].sheet); } catch (e) { return; }
+    if (!aba) return;
+
+    const dados = aba.getDataRange().getValues();
+    for (let i = 1; i < dados.length && i < 500; i++) {
+      const eventId = String(dados[i][C.EVENT_ID] || "");
+      if (!eventId) continue;
+
+      let ev = null;
+      try { ev = cal.getEventById(eventId); } catch (e) { ev = null; }
+
+      if (!ev) {
+        aba.getRange(i + 1, C.STATUS + 1).setValue("PENDENTE");
+        aba.getRange(i + 1, C.EVENT_ID + 1).setValue("");
+        mudancas.push(dados[i][C.NOME] + ": evento apagado na agenda — voltou para pendente");
+        continue;
+      }
+
+      const rotulo = _rotuloHorario(ev.getStartTime());
+      if (String(dados[i][C.STATUS] || "") !== "CONFIRMADO: " + rotulo) {
+        aba.getRange(i + 1, C.STATUS + 1).setValue("CONFIRMADO: " + rotulo);
+        mudancas.push(dados[i][C.NOME] + ": horário atualizado pela agenda para " + rotulo);
+      }
+    }
+  });
+  return mudancas;
+}
+
+/** Reagenda um onboarding confirmado, movendo o MESMO evento do Calendar. */
+function reagendarOnboarding(sessao, id, categoria, novaDataHora, aviso) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    _exigirAdmin(sessao);
+
+    const cand = getCandidatoById(id, categoria);
+    if (!cand) return { success: false, message: "Cadastro não encontrado." };
+
+    const inicio = _parseISOLocal(novaDataHora);
+    if (inicio.getTime() < Date.now()) return { success: false, message: "A nova data já passou." };
+    const fim = new Date(inicio.getTime() + 3600000);
+    const cal = CAL_();
+
+    const choque = cal.getEvents(inicio, fim).filter(function (e) { return e.getId() !== cand.eventId; });
+    if (choque.length) return { success: false, message: "Já existe compromisso nesse horário: " + choque[0].getTitle() };
+
+    const rotulo = _rotuloHorario(inicio);
+    let ev = null;
+    if (cand.eventId) { try { ev = cal.getEventById(cand.eventId); } catch (e) { ev = null; } }
+
+    if (ev) {
+      ev.setTime(inicio, fim);
+    } else {
+      ev = cal.createEvent("COB · Onboarding " + cand.nome + " " + (cand.sobrenome || ""), inicio, fim,
+        { guests: cand.email, sendInvites: true });
+      try { ev.addPopupReminder(60); ev.addEmailReminder(1440); } catch (e) {}
+    }
+
+    const aba = _acharAba(SpreadsheetApp.openById(SS_ID_()), cand.sheet);
+    aba.getRange(cand.linha, C.STATUS + 1).setValue("CONFIRMADO: " + rotulo);
+    aba.getRange(cand.linha, C.EVENT_ID + 1).setValue(ev.getId());
+    aba.getRange(cand.linha, C.LEMBRETES + 1).setValue("");
+
+    const caixa = 'style="background:#0F2A20;padding:24px;border-radius:8px;margin:24px 0;border-left:4px solid #E8B4BC;text-align:left;"';
+    const corpo = '<p>Olá <b>' + cand.nome + '</b>,</p>'
+      + '<p>A sua sessão de onboarding com o COB foi remarcada.</p>'
+      + '<div ' + caixa + '><p style="margin:0;font-size:17px;font-family:Georgia,serif;">'
+      + '<b style="color:#E8B4BC;">Nova data e hora:</b> ' + rotulo + '</p></div>'
+      + (aviso ? '<p style="color:#9BA89F;">' + aviso + '</p>' : '')
+      + '<p style="color:#9BA89F;">O evento na sua agenda já foi atualizado. '
+      + 'Se este horário não servir, responda a este e-mail.</p>';
+    const para = [cand.email].concat(cand.emailExtra ? [cand.emailExtra] : []).join(",");
+    MailApp.sendEmail({ to: para, subject: "Onboarding remarcado — COB",
+      htmlBody: criarTemplateEmail("ONBOARDING REMARCADO", corpo, { lgpd: true }) });
+
+    return { success: true, message: "Remarcado para " + rotulo };
+  } catch (e) {
+    return { success: false, message: String(e.message || e) };
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+/** Cancela o onboarding: apaga o evento e devolve o cadastro para pendente. */
+function cancelarOnboarding(sessao, id, categoria, motivo) {
+  try {
+    _exigirAdmin(sessao);
+    const cand = getCandidatoById(id, categoria);
+    if (!cand) return { success: false, message: "Cadastro não encontrado." };
+
+    if (cand.eventId) {
+      try { const ev = CAL_().getEventById(cand.eventId); if (ev) ev.deleteEvent(); }
+      catch (e) { Logger.log("Evento não removido: " + e); }
+    }
+
+    const aba = _acharAba(SpreadsheetApp.openById(SS_ID_()), cand.sheet);
+    aba.getRange(cand.linha, C.STATUS + 1).setValue("PENDENTE");
+    aba.getRange(cand.linha, C.EVENT_ID + 1).setValue("");
+    aba.getRange(cand.linha, C.LEMBRETES + 1).setValue("");
+
+    const corpo = '<p>Olá <b>' + cand.nome + '</b>,</p>'
+      + '<p>A sua sessão de onboarding com o COB foi cancelada e removida da sua agenda.</p>'
+      + (motivo ? '<p style="color:#9BA89F;">' + motivo + '</p>' : '')
+      + '<p style="color:#9BA89F;">A equipe entra em contato para combinar uma nova data. '
+      + 'O seu cadastro continua ativo.</p>';
+    const para = [cand.email].concat(cand.emailExtra ? [cand.emailExtra] : []).join(",");
+    MailApp.sendEmail({ to: para, subject: "Onboarding cancelado — COB",
+      htmlBody: criarTemplateEmail("ONBOARDING CANCELADO", corpo, { lgpd: true }) });
+
+    return { success: true, message: "Onboarding cancelado." };
+  } catch (e) {
+    return { success: false, message: String(e.message || e) };
+  }
+}
+
+// ============================================================
+// LEMBRETES — 24h e 2h antes, independentes do Google Calendar
+// ============================================================
+/**
+ * O lembrete nativo do Calendar só chega a quem usa Calendar e aceitou o convite.
+ * Este envio é próprio e alcança todo mundo. Rodar por gatilho de hora em hora.
+ */
+function enviarLembretes() {
+  const ss = SpreadsheetApp.openById(SS_ID_());
+  const agora = Date.now();
+  let enviados = 0;
+
+  Object.keys(CATEGORIAS).forEach(function (key) {
+    const aba = _acharAba(ss, CATEGORIAS[key].sheet);
+    if (!aba) return;
+    const dados = aba.getDataRange().getValues();
+
+    for (let i = 1; i < dados.length; i++) {
+      const status = String(dados[i][C.STATUS] || "");
+      const m = status.match(/^CONFIRMADO:\s*(.+)$/i);
+      if (!m || !dados[i][C.EMAIL]) continue;
+
+      let quando;
+      try { quando = parseDate(m[1]); } catch (e) { continue; }
+      const horas = (quando.getTime() - agora) / 3600000;
+      const ja = String(dados[i][C.LEMBRETES] || "");
+
+      let marca = "";
+      if (horas > 1.5 && horas <= 2.5 && ja.indexOf("2h") === -1) marca = "2h";
+      else if (horas > 22 && horas <= 26 && ja.indexOf("24h") === -1) marca = "24h";
+      if (!marca) continue;
+
+      const quanto = (marca === "24h") ? "amanhã" : "daqui a duas horas";
+      const caixa = 'style="background:#0F2A20;padding:24px;border-radius:8px;margin:24px 0;border-left:4px solid #E8B4BC;text-align:left;"';
+      const corpo = '<p>Olá <b>' + dados[i][C.NOME] + '</b>,</p>'
+        + '<p>Passando para lembrar: a sua sessão de onboarding com o COB é <b>' + quanto + '</b>.</p>'
+        + '<div ' + caixa + '><p style="margin:0;font-size:17px;font-family:Georgia,serif;">'
+        + '<b style="color:#E8B4BC;">Data e hora:</b> ' + m[1] + '</p></div>'
+        + '<p style="color:#9BA89F;">Se precisar remarcar, responda a este e-mail.</p>';
+
+      try {
+        const para = [dados[i][C.EMAIL]].concat(dados[i][C.EMAIL_EXTRA] ? [dados[i][C.EMAIL_EXTRA]] : []).join(",");
+        MailApp.sendEmail({ to: para, subject: "Lembrete · onboarding COB — " + m[1],
+          htmlBody: criarTemplateEmail("LEMBRETE DE ONBOARDING", corpo, { lgpd: true }) });
+        aba.getRange(i + 1, C.LEMBRETES + 1).setValue((ja ? ja + " " : "") + marca);
+        enviados++;
+      } catch (e) { Logger.log("Lembrete falhou: " + e); }
+    }
+  });
+  return "Lembretes enviados: " + enviados;
+}
+
+/** Cria o gatilho de hora em hora. Rodar uma vez no editor. */
+function instalarGatilhoLembretes() {
+  ScriptApp.getProjectTriggers().forEach(function (g) {
+    if (g.getHandlerFunction() === "enviarLembretes") ScriptApp.deleteTrigger(g);
+  });
+  ScriptApp.newTrigger("enviarLembretes").timeBased().everyHours(1).create();
+  return "Gatilho instalado: enviarLembretes roda de hora em hora.";
+}
+
+// ============================================================
+// DRIVE E AGENDA DO COB
+// ============================================================
+/** Dá acesso de edição à pasta raiz e, por herança, às subpastas. */
+function compartilharPastaRaiz(emails) {
+  const lista = emails || ["orquestrasbrasileiras@gmail.com", "giselynascimento0@gmail.com"];
+  const pasta = DriveApp.getFolderById(FOLDER_ID_());
+  const r = [];
+  lista.forEach(function (e) {
+    try { pasta.addEditor(e); r.push("OK    · " + e + " agora é editor"); }
+    catch (err) { r.push("FALHA · " + e + " → " + err); }
+  });
+  r.push("Pasta: " + pasta.getName() + " — " + pasta.getUrl());
+  const txt = r.join("\n");
+  Logger.log(txt);
+  return txt;
+}
+
+/** Aponta a plataforma para a agenda do COB. Rodar depois que a Gisely compartilhar. */
+function usarAgendaDoCOB() {
+  const r = configurarProprietario({ agenda: "orquestrasbrasileiras@gmail.com" });
+  return r + "\n\n" + TESTE_agenda();
+}
+
+/** Confirma que a agenda configurada é legível E gravável. */
+function TESTE_agenda() {
+  const r = [];
+  const id = P_("COB_CALENDAR_ID");
+  r.push("COB_CALENDAR_ID: " + (id || "(vazio — usando a agenda padrão da conta do script)"));
+
+  let cal;
+  try { cal = CAL_(); }
+  catch (e) {
+    r.push("FALHA · não consegui abrir a agenda → " + e);
+    r.push("");
+    r.push("Causa provável: a agenda ainda não foi compartilhada com a conta que autorizou");
+    r.push("o script, ou a conta ainda não a adicionou à própria lista de agendas.");
+    return r.join("\n");
+  }
+
+  r.push("OK    · agenda aberta: " + cal.getName() + " (" + cal.getId() + ")");
+  try {
+    const ev = cal.getEvents(new Date(), new Date(Date.now() + 7 * 86400000));
+    r.push("OK    · leitura: " + ev.length + " evento(s) nos próximos 7 dias");
+  } catch (e) { r.push("FALHA · leitura → " + e); }
+
+  try {
+    const t = new Date(Date.now() + 400 * 86400000);
+    const ev = cal.createEvent("TESTE OPUS AI — pode apagar", t, new Date(t.getTime() + 1800000));
+    ev.deleteEvent();
+    r.push("OK    · escrita: consigo criar e apagar eventos nesta agenda");
+  } catch (e) {
+    r.push("FALHA · escrita → " + e);
+    r.push("        Peça permissão 'Fazer alterações em eventos', não apenas 'Ver todos os detalhes'.");
+  }
+
+  const slots = getAvailableTimes();
+  r.push("INFO  · horários livres oferecidos agora: " + slots.length);
+  if (slots.length) r.push("INFO  · primeiro: " + slots[0].label);
+  const txt = r.join("\n");
+  Logger.log(txt);
+  return txt;
+}
+
+/** Contagem barata para o painel saber se chegou cadastro novo, sem reler tudo. */
+function contarCadastros(sessao) {
+  try {
+    _exigirAdmin(sessao);
+    const ss = SpreadsheetApp.openById(SS_ID_());
+    let total = 0;
+    Object.keys(CATEGORIAS).forEach(function (key) {
+      const aba = _acharAba(ss, CATEGORIAS[key].sheet);
+      if (aba) total += Math.max(aba.getLastRow() - 1, 0);
+    });
+    return { success: true, total: total };
+  } catch (e) {
+    return { success: false, expirada: true };
+  }
+}
+
 /**
  * DIAGNÓSTICO DO PAINEL — rodar no editor quando um cadastro não aparecer.
  * Mostra exatamente o que existe na planilha e o que o painel consegue ler.
@@ -1012,6 +1373,7 @@ function verificarInstalacao() {
 function diagnosticarPainel() {
   const r = [];
   const ss = SpreadsheetApp.openById(SS_ID_());
+  r.push("VERSÃO PUBLICADA: " + VERSAO);
   r.push("Planilha: " + ss.getName());
   r.push("URL: " + ss.getUrl());
   r.push("Abas existentes: " + ss.getSheets().map(function (a) { return a.getName(); }).join(" | "));

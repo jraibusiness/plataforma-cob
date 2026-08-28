@@ -1,0 +1,210 @@
+<section class="route active" id="route-home">
+  <div class="container">
+    <div class="hero">
+      <div class="hero-eyebrow" data-i18n="hero_eyebrow">A ARTE DE UNIR PELA MÚSICA</div>
+      <h1><span data-i18n="hero_t1">Plataforma</span> <em data-i18n="hero_t2">COB</em></h1>
+      <p data-i18n="hero_p">Bem-vindo(a) ao Conectando Orquestras Brasileiras — uma rede colaborativa dedicada a fortalecer a gestão e o intercâmbio entre grupos sinfônicos do país.</p>
+    </div>
+    <h2 class="section-title" data-i18n="home_choose">Como você gostaria de se conectar?</h2>
+    <p class="section-sub" data-i18n="home_choose_sub">Escolha a categoria que melhor representa o seu interesse.</p>
+    <div class="category-grid">
+      <button class="category-card" data-cat="embaixador">
+        <span class="cat-icon">★</span>
+        <span class="cat-title" data-i18n="cat_emb_title">Embaixador(a)</span>
+        <span class="cat-desc" data-i18n="cat_emb_desc">Represente o COB e ajude a expandir nossa rede em sua região, conectando pessoas e instituições.</span>
+        <span class="cat-arrow" data-i18n="cat_start">Iniciar →</span>
+      </button>
+      <button class="category-card" data-cat="representante">
+        <span class="cat-icon">♪</span>
+        <span class="cat-title" data-i18n="cat_rep_title">Representante de Orquestra</span>
+        <span class="cat-desc" data-i18n="cat_rep_desc">Cadastre sua orquestra na rede e participe de iniciativas colaborativas de gestão e formação.</span>
+        <span class="cat-arrow" data-i18n="cat_start">Iniciar →</span>
+      </button>
+      <button class="category-card" data-cat="voluntario">
+        <span class="cat-icon">♥</span>
+        <span class="cat-title" data-i18n="cat_vol_title">Voluntário(a)</span>
+        <span class="cat-desc" data-i18n="cat_vol_desc">Some seu talento ao trabalho dos GTs do COB. Há frentes para diversos perfis profissionais.</span>
+        <span class="cat-arrow" data-i18n="cat_start">Iniciar →</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- FORMULÁRIO -->
+<section class="route" id="route-form">
+  <div class="container">
+    <div class="form-shell">
+      <div class="form-header">
+        <div class="form-cat-label" id="formCatLabel">VOLUNTÁRIO(A)</div>
+        <div class="form-step-counter"><span data-i18n="step_label">Etapa</span> <span id="stepNum">1</span> <span data-i18n="step_of">de</span> <span id="stepTotal">8</span></div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+      <div class="form-body">
+        <form id="cobForm" onsubmit="return false;">
+
+          <div class="step active" data-step="1">
+            <h2 class="q-title" data-i18n="q1_title">Como podemos te chamar?</h2>
+            <p class="q-help" data-i18n="q1_help">Insira seu nome e sobrenome.</p>
+            <div class="field-row">
+              <input class="input" type="text" id="nome" data-i18n-attr="placeholder|q1_first" placeholder="Nome" autocomplete="given-name">
+              <input class="input" type="text" id="sobrenome" data-i18n-attr="placeholder|q1_last" placeholder="Sobrenome" autocomplete="family-name">
+            </div>
+          </div>
+
+          <div class="step" data-step="2">
+            <h2 class="q-title" data-i18n="q2_title">Qual o seu e-mail?</h2>
+            <p class="q-help" data-i18n="q2_help">Digite o e-mail principal e repita para conferir. Um segundo e-mail é opcional.</p>
+            <input class="input" type="email" id="email" data-i18n-attr="placeholder|q2_main" placeholder="E-mail principal" autocomplete="email" inputmode="email" spellcheck="false">
+            <div class="spacer"></div>
+            <input class="input" type="email" id="email_conf" data-i18n-attr="placeholder|q2_conf" placeholder="Repita o e-mail principal" autocomplete="off" inputmode="email" spellcheck="false" onpaste="return false;">
+            <div class="hint" id="emailHint" data-i18n="q2_conf_hint">Os dois campos precisam ser idênticos.</div>
+            <div class="spacer"></div>
+            <input class="input" type="email" id="email_extra" data-i18n-attr="placeholder|q2_extra" placeholder="E-mail adicional (opcional)" autocomplete="off" inputmode="email" spellcheck="false">
+          </div>
+
+          <div class="step" data-step="3">
+            <h2 class="q-title" data-i18n="q3_title">WhatsApp para contato</h2>
+            <p class="q-help" data-i18n="q3_help">Selecione o código do país e digite apenas números.</p>
+            <div class="field-row">
+              <select class="select" id="ddi" style="flex:0 0 120px;">
+                <option value="55">🇧🇷 +55</option>
+                <option value="1">🇺🇸 +1</option>
+                <option value="351">🇵🇹 +351</option>
+                <option value="44">🇬🇧 +44</option>
+                <option value="49">🇩🇪 +49</option>
+                <option value="33">🇫🇷 +33</option>
+                <option value="34">🇪🇸 +34</option>
+                <option value="54">🇦🇷 +54</option>
+              </select>
+              <input class="input" type="tel" id="telefone" placeholder="11999999999" maxlength="15" inputmode="numeric" autocomplete="tel">
+            </div>
+            <input type="hidden" id="whatsapp">
+          </div>
+
+          <div class="step" data-step="4">
+            <h2 class="q-title" data-i18n="q4_title">Qual função pretende assumir?</h2>
+            <p class="q-help" data-i18n="q4_help">Toque na opção desejada.</p>
+            <div class="chip-grid" id="funcaoGrid"></div>
+          </div>
+
+          <div class="step" data-step="5">
+            <h2 class="q-title" data-i18n="q5_title">Escolha 3 horários para o onboarding</h2>
+            <p class="q-help" data-i18n="q5_help">Toque para selecionar. Você pode desmarcar e trocar a qualquer momento.</p>
+            <div class="slot-counter">
+              <span class="slot-counter-label" data-i18n="q5_count">Selecionados</span>
+              <span class="slot-counter-value"><span id="slotSelCount">0</span> / 3</span>
+            </div>
+            <div class="slot-passo" id="slotPasso"></div>
+            <ul class="slot-escolhidos" id="slotEscolhidos"></ul>
+            <div class="slot-list" id="slotList" style="margin-top:16px;"><div class="loader"></div></div>
+          </div>
+
+          <div class="step" data-step="6">
+            <h2 class="q-title" data-i18n="q6_title">Foto de perfil</h2>
+            <p class="q-help" data-i18n="q6_help">Retrato de frente, boa resolução, fundo neutro. Até 5 MB.</p>
+            <label class="upload-zone" id="uploadFoto">
+              <div class="upload-icon">📷</div>
+              <div class="upload-label" data-i18n="q6_tap">Toque para enviar uma foto</div>
+              <div class="upload-help" data-i18n="q6_formats">JPG, PNG ou WEBP</div>
+              <input type="file" id="foto" accept="image/*">
+            </label>
+          </div>
+
+          <div class="step" data-step="7">
+            <h2 class="q-title" data-i18n="q7_title">Currículo (opcional)</h2>
+            <p class="q-help" data-i18n="q7_help">PDF ou DOCX, até 5 MB. Você pode pular esta etapa.</p>
+            <label class="upload-zone" id="uploadCv">
+              <div class="upload-icon">📄</div>
+              <div class="upload-label" data-i18n="q7_tap">Toque para enviar o currículo</div>
+              <div class="upload-help" data-i18n="q7_formats">PDF ou DOCX</div>
+              <input type="file" id="cv" accept=".pdf,.docx,application/pdf">
+            </label>
+          </div>
+
+          <div class="step" data-step="9">
+            <h2 class="q-title hidden" data-i18n="q9_title">Informações específicas</h2>
+            <div id="detailsFields"></div>
+          </div>
+
+          <div class="step" data-step="10">
+            <h2 class="q-title" data-i18n="q10_title">Termo de Adesão e LGPD</h2>
+            <p class="q-help" data-i18n="q10_help">Leia com atenção e confirme para concluir.</p>
+            <div class="review-box terms-scroll">
+              <p data-i18n="terms_p1"></p>
+              <p data-i18n="terms_p2"></p>
+              <p data-i18n="terms_p3"></p>
+              <p data-i18n="terms_p4"></p>
+              <p data-i18n="terms_p5"></p>
+            </div>
+            <label class="terms-check">
+              <input type="checkbox" id="aceiteTermos">
+              <span style="font-size:.9rem;" data-i18n="terms_accept">Li e estou <b>ciente e de acordo</b> com o Termo de Adesão ao Serviço Voluntário do COB e com o tratamento dos meus dados pessoais conforme a LGPD.</span>
+            </label>
+          </div>
+
+          <div class="step" data-step="8">
+            <h2 class="q-title" data-i18n="q8_title">Revise e confirme</h2>
+            <p class="q-help" data-i18n="q8_help">Verifique seus dados antes do envio final.</p>
+            <div class="review-box" id="reviewBox"></div>
+            <div class="loader hidden" id="finalLoader"></div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+    <div class="form-cta">
+      <button class="btn btn-ghost" id="btnPrev" data-i18n="btn_back">VOLTAR</button>
+      <button class="btn btn-primary" id="btnNext" data-i18n="btn_next">PRÓXIMO</button>
+    </div>
+  </div>
+  <div class="form-cta-sticky">
+    <button class="btn btn-ghost" id="btnPrevMobile" data-i18n="btn_back">VOLTAR</button>
+    <button class="btn btn-primary" id="btnNextMobile" data-i18n="btn_next">PRÓXIMO</button>
+  </div>
+</section>
+
+<!-- SUCESSO -->
+<section class="route" id="route-success">
+  <div class="success-wrap">
+    <div class="success-card">
+      <div class="success-icon">✓</div>
+      <h1 data-i18n="success_t">CADASTRO REGISTRADO</h1>
+      <p data-i18n="success_p1">Você receberá um e-mail com o comprovante do envio.</p>
+      <p id="successP2">A equipe confirma a data exata da sua sessão de onboarding em até 48h.</p>
+      <div class="ok-id" id="successId">—</div>
+      <p style="font-size:.8rem;" data-i18n="success_p3">Se não encontrar o e-mail, verifique a caixa de spam.</p>
+      <button class="btn btn-ghost" id="btnBackHome" style="display:inline-flex;width:auto;padding:14px 30px;margin-top:24px;" data-i18n="back_home">VOLTAR AO INÍCIO</button>
+    </div>
+  </div>
+</section>
+
+<!-- LOGIN -->
+<section class="route" id="route-login-email">
+  <div class="container narrow">
+    <div class="login-card">
+      <h2 data-i18n="login_title">ACESSO RESTRITO</h2>
+      <p data-i18n="login_desc">Insira o e-mail institucional para receber um código de acesso.</p>
+      <input class="input" type="email" id="adminEmail" data-i18n-attr="placeholder|login_email_ph" placeholder="E-mail institucional" autocomplete="email" inputmode="email">
+      <div class="error-msg" id="loginErr1"></div>
+      <div class="loader hidden" id="loginLoader1"></div>
+      <button class="btn btn-primary btn-block" id="btnSendCode" data-i18n="login_send">ENVIAR CÓDIGO</button>
+      <div class="spacer"></div>
+      <button class="link-pink" id="btnLoginHome" data-i18n="back_home">← VOLTAR AO INÍCIO</button>
+    </div>
+  </div>
+</section>
+
+<section class="route" id="route-login-code">
+  <div class="container narrow">
+    <div class="login-card">
+      <h2 data-i18n="verify_title">VERIFICAÇÃO</h2>
+      <p data-i18n="verify_desc">Enviamos um código de 6 dígitos para o seu e-mail.</p>
+      <input class="input code" type="text" id="adminCode" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+      <div class="error-msg" id="loginErr2"></div>
+      <div class="loader hidden" id="loginLoader2"></div>
+      <button class="btn btn-primary btn-block" id="btnCheckCode" data-i18n="login_enter">ENTRAR NO PAINEL</button>
+      <div class="spacer"></div>
+      <button class="link-pink" id="btnCodeBack" data-i18n="btn_back">← VOLTAR</button>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,1183 @@
+<script>
+
+var FLOWS = {
+  voluntario:   [1,2,3,4,9,5,6,10,8],
+  embaixador:   [1,2,3,9,6,7,10,8],
+  representante:[1,2,3,9,6,10,8]
+};
+
+var state = {
+  step:1, categoria:'voluntario', flow:[], selectedSlots:[], funcao:'',
+  details:{}, aceiteTermos:false,
+  files:{foto:null, cv:null},
+  adminEmail:'', sessao:'',
+  masterSlots:[], slotsCarregados:false, slotsCarregando:false,
+  ronda:null, totalConhecido:null,
+  currentCat:'todos', cache:null, lang:'PT'
+};
+
+/* GTs do COB — apenas voluntários (pedido da coordenação: embaixadores e
+   representantes não escolhem GT). */
+var FUNCOES = {
+  voluntario: ['GT Gestão e Comunicação','GT Orquestrando Arquivo','Coordenação Geral','Outra Frente']
+};
+
+var UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO','Exterior'];
+
+/* showIf: função opcional que decide se a tela aparece. */
+var DETAILS_FIELDS = {
+  voluntario: [
+    {id:'area_atuacao',    labelKey:'d_area_atuacao',    type:'choice', req:true,  other:true, optsKey:['opt_area_com','opt_area_arq','opt_area_gest','opt_area_pesq','opt_area_design','opt_outro']},
+    {id:'carga_horaria',   labelKey:'d_carga_horaria',   type:'choice', req:true,  optsKey:['opt_carga_2','opt_carga_24','opt_carga_46','opt_carga_6']},
+    {id:'tel_recado',      labelKey:'d_tel_recado',      type:'text',   req:true,  phKey:'d_tel_recado_ph'},
+    {id:'apelido',         labelKey:'d_apelido',         type:'text',   req:false, phKey:'d_opcional'},
+    {id:'aniversario',     labelKey:'d_aniversario',     type:'choice', req:true,  optsKey:['opt_sim','opt_nao']},
+    {id:'data_aniversario',labelKey:'d_data_aniversario',type:'date',   req:true,  showIf:function(d){return festeja(d.aniversario);}},
+    {id:'mencionar_aniv',  labelKey:'d_mencionar_aniv',  type:'choice', req:true,  optsKey:['opt_sim','opt_nao'], showIf:function(d){return festeja(d.aniversario);}}
+  ],
+  embaixador: [
+    {id:'funcao_emb',      labelKey:'d_funcao_emb',      type:'choice', req:true,  optsKey:['opt_emb_nac','opt_emb_int']},
+    {id:'orquestra',       labelKey:'d_orquestra_emb',   type:'text',   req:true},
+    {id:'apelido',         labelKey:'d_apelido',         type:'text',   req:false, phKey:'d_opcional'},
+    {id:'aniversario',     labelKey:'d_aniversario',     type:'choice', req:true,  optsKey:['opt_sim','opt_nao']},
+    {id:'data_aniversario',labelKey:'d_data_aniversario',type:'date',   req:true,  showIf:function(d){return festeja(d.aniversario);}},
+    {id:'parabenizar',     labelKey:'d_parabenizar',     type:'choice', req:true,  optsKey:['opt_sim','opt_nao'], showIf:function(d){return festeja(d.aniversario);}}
+  ],
+  representante: [
+    {id:'cidade',      labelKey:'d_cidade',       type:'text',     req:true},
+    {id:'estado',      labelKey:'d_estado',       type:'select',   req:true, opts:UFS},
+    {id:'raca',        labelKey:'d_raca',         type:'choice',   req:true, other:true, optsKey:['opt_amarela','opt_branca','opt_indigena','opt_negra','opt_parda','opt_prefiro_nao','opt_outro']},
+    {id:'genero',      labelKey:'d_genero',       type:'choice',   req:true, other:true, optsKey:['opt_mulher_cis','opt_homem_cis','opt_mulher_trans','opt_homem_trans','opt_nao_binaria','opt_prefiro_nao','opt_outro']},
+    {id:'rede_social', labelKey:'d_rede_social',  type:'text',     req:false, phKey:'d_opcional'},
+    {id:'formacao',    labelKey:'d_formacao',     type:'text',     req:false, phKey:'d_opcional'},
+    {id:'orquestra',   labelKey:'d_orquestra_rep',type:'text',     req:true},
+    {id:'cargo',       labelKey:'d_cargo',        type:'text',     req:true},
+    {id:'apelido',     labelKey:'d_apelido_rep',  type:'text',     req:false, phKey:'d_opcional'},
+    {id:'experiencia', labelKey:'d_experiencia',  type:'textarea', req:true},
+    {id:'dores',       labelKey:'d_dores',        type:'textarea', req:true, phKey:'d_dores_ph'},
+    {id:'palestrar',   labelKey:'d_palestrar',    type:'choice',   req:true, optsKey:['opt_sim','opt_nao','opt_talvez']}
+  ]
+};
+
+/* "Sim" nos três idiomas — usado pelos showIf. */
+function festeja(v){ return ['sim','yes','sí','si'].indexOf(String(v||'').toLowerCase().trim()) !== -1; }
+
+
+function t(k){ var d=I18N[state.lang]||I18N.PT; return (d[k]!==undefined)?d[k]:(I18N.PT[k]!==undefined?I18N.PT[k]:k); }
+
+/* Escapa antes de qualquer innerHTML com dado de usuário. */
+function esc(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function $(id){ return document.getElementById(id); }
+function on(el, ev, fn){ if(el) el.addEventListener(ev, fn); }
+
+/* ============================================================
+   PONTE COM O SERVIDOR
+   ============================================================ */
+function temGas(){ return (typeof google !== 'undefined' && google.script && !!google.script.run); }
+function srv(nome, args, onOk, onErr){
+  if(!temGas()){ if(onErr) onErr(new Error('sem google.script')); return; }
+  var r = google.script.run.withSuccessHandler(function(res){ if(onOk) onOk(res); });
+  r = r.withFailureHandler(function(e){ if(onErr) onErr(e); else toast(t('error_conn'), true); });
+  r[nome].apply(r, args||[]);
+}
+/* Trata resposta com sessão expirada de forma uniforme. */
+function checarSessao(res){
+  if(res && res.success === false && (res.expirada || res.message === 'SESSAO_EXPIRADA')){
+    state.sessao=''; toast(t('session_expired'), true); navigate('login-email'); return false;
+  }
+  return true;
+}
+
+/* ============================================================
+   IDIOMA
+   ============================================================ */
+function setLanguage(lang){
+  if(!I18N[lang]) return;
+  state.lang = lang;
+  var botoes = document.querySelectorAll('.lang-switcher button');
+  for(var i=0;i<botoes.length;i++){ botoes[i].classList.toggle('active', botoes[i].getAttribute('data-lang')===lang); }
+
+  var els = document.querySelectorAll('[data-i18n]');
+  for(var j=0;j<els.length;j++){
+    var k = els[j].getAttribute('data-i18n');
+    if(I18N[lang][k]!==undefined) els[j].innerHTML = I18N[lang][k];
+  }
+  var attrs = document.querySelectorAll('[data-i18n-attr]');
+  for(var m=0;m<attrs.length;m++){
+    var p = attrs[m].getAttribute('data-i18n-attr').split('|');
+    if(I18N[lang][p[1]]!==undefined) attrs[m].setAttribute(p[0], I18N[lang][p[1]]);
+  }
+
+  if($('route-form') && $('route-form').classList.contains('active')){
+    renderFuncoes(); showStep(state.step);
+  }
+  if($('adminOptions')) renderAprovacao();
+}
+
+/* ============================================================
+   ROTAS
+   ============================================================ */
+function navigate(rota){
+  var rotas = document.querySelectorAll('.route');
+  for(var i=0;i<rotas.length;i++) rotas[i].classList.remove('active');
+  var alvo = $('route-'+rota);
+  if(alvo) alvo.classList.add('active');
+  if($('hamburger')) $('hamburger').style.display = (rota==='dashboard') ? 'inline-flex' : 'none';
+  if(rota!=='dashboard') pararRonda();
+  if($('navAdmin')) $('navAdmin').style.display = (rota==='dashboard') ? 'none' : '';
+  window.scrollTo({top:0, behavior:'smooth'});
+  if(rota==='dashboard') loadDashboard();
+}
+
+function toast(msg, erro){
+  var el = $('toast');
+  el.textContent = msg;
+  el.classList.toggle('error', !!erro);
+  el.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 4000);
+}
+
+/* ============================================================
+   MODAL GENÉRICO (confirmação e edição)
+   ============================================================ */
+function abrirModal(cfg){
+  var m = $('acaoModal'); if(!m) return;
+  $('acaoTitulo').textContent = cfg.titulo || '';
+  $('acaoTexto').innerHTML = cfg.texto || '';
+  var campos = $('acaoCampos');
+  campos.innerHTML = '';
+  var refs = {};
+  (cfg.campos||[]).forEach(function(c){
+    var rot = document.createElement('label');
+    rot.className = 'rev-rot'; rot.style.marginTop='12px'; rot.textContent = c.rotulo;
+    var el = document.createElement(c.tipo==='textarea' ? 'textarea' : 'input');
+    el.className = 'input';
+    if(c.tipo && c.tipo!=='textarea') el.type = c.tipo;
+    if(c.valor) el.value = c.valor;
+    if(c.min) el.min = c.min;
+    if(c.tipo==='textarea'){ el.rows = 3; el.style.minHeight='90px'; el.style.resize='vertical'; }
+    campos.appendChild(rot); campos.appendChild(el);
+    refs[c.id] = el;
+  });
+  $('acaoOk').textContent = cfg.ok || t('btn_confirm');
+  $('acaoCancelar').textContent = cfg.cancelar || t('btn_cancel');
+
+  function fechar(){ m.classList.remove('show'); }
+  $('acaoOk').onclick = function(){
+    var vals = {};
+    Object.keys(refs).forEach(function(k){ vals[k] = refs[k].value; });
+    if(cfg.aoConfirmar && cfg.aoConfirmar(vals) === false) return;
+    fechar();
+  };
+  $('acaoCancelar').onclick = function(){ fechar(); if(cfg.aoCancelar) cfg.aoCancelar(); };
+  m.onclick = function(e){ if(e.target===m){ fechar(); if(cfg.aoCancelar) cfg.aoCancelar(); } };
+  m.classList.add('show');
+  var primeiro = campos.querySelector('input,textarea');
+  if(primeiro) setTimeout(function(){ primeiro.focus(); }, 60);
+}
+
+/* ============================================================
+   FLUXO DO FORMULÁRIO
+   ============================================================ */
+/* Monta a lista de telas; cada campo específico vira uma tela. */
+function buildFlow(cat){
+  var base = FLOWS[cat] || FLOWS.voluntario;
+  var telas = [];
+  base.forEach(function(s){
+    if(s===9){ (DETAILS_FIELDS[cat]||[]).forEach(function(f,i){ telas.push({step:9, fieldIdx:i}); }); }
+    else { telas.push({step:s}); }
+  });
+  return telas;
+}
+/* Telas visíveis agora (respeita showIf). */
+function telasVisiveis(){
+  return state.flow.filter(function(tl){
+    if(tl.step!==9) return true;
+    var f = (DETAILS_FIELDS[state.categoria]||[])[tl.fieldIdx];
+    return f && (!f.showIf || f.showIf(state.details));
+  });
+}
+function flowHasStep(s){ return state.flow.some(function(x){ return x.step===s; }); }
+function telaAtual(){ return telasVisiveis()[state.step-1]; }
+
+function startCategory(cat){
+  state.categoria = cat;
+  state.flow = buildFlow(cat);
+  state.step = 1;
+  state.selectedSlots = [];
+  state.funcao = '';
+  state.details = {};
+  state.aceiteTermos = false;
+  state.voltarParaRevisao = false;
+  state.files = {foto:null, cv:null};
+
+  $('cobForm').reset();
+  resetUpload('uploadFoto','q6_tap','q6_formats');
+  resetUpload('uploadCv','q7_tap','q7_formats');
+  $('emailHint').textContent = t('q2_conf_hint');
+  $('emailHint').classList.remove('err');
+
+  var rotulos = {voluntario:t('cat_vol_title'), embaixador:t('cat_emb_title'), representante:t('cat_rep_title')};
+  $('formCatLabel').textContent = rotulos[cat] || '';
+
+  renderFuncoes();
+  navigate('form');
+  showStep(1);
+  if(flowHasStep(5)) carregarSlots();
+}
+
+function resetUpload(id, tapKey, fmtKey){
+  var z = $(id); if(!z) return;
+  z.classList.remove('has-file');
+  z.querySelector('.upload-label').textContent = t(tapKey);
+  z.querySelector('.upload-help').textContent = t(fmtKey);
+}
+
+function renderFuncoes(){
+  var grid = $('funcaoGrid'); if(!grid) return;
+  grid.innerHTML = '';
+  (FUNCOES[state.categoria]||[]).forEach(function(f){
+    var chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip' + (state.funcao===f ? ' selected' : '');
+    chip.textContent = f;
+    chip.addEventListener('click', function(){
+      state.funcao = f;
+      renderFuncoes();
+      setTimeout(nextStep, 200);
+    });
+    grid.appendChild(chip);
+  });
+}
+
+/* ------------------------------------------------------------
+   Campos específicos — uma pergunta por tela, sem HTML injetado
+   ------------------------------------------------------------ */
+function renderDetails(){
+  var box = $('detailsFields'); if(!box) return;
+  box.innerHTML = '';
+  var tela = telaAtual();
+  if(!tela || tela.step!==9) return;
+  var f = (DETAILS_FIELDS[state.categoria]||[])[tela.fieldIdx];
+  if(!f) return;
+
+  var val = state.details[f.id] || '';
+  var ph = f.phKey ? t(f.phKey) : '';
+
+  var titulo = document.createElement('h2');
+  titulo.className = 'q-title';
+  titulo.style.fontSize = '1.35rem';
+  titulo.textContent = t(f.labelKey);
+  if(f.req){ var st=document.createElement('span'); st.style.color='var(--pink)'; st.textContent=' *'; titulo.appendChild(st); }
+  box.appendChild(titulo);
+
+  var ajuda = document.createElement('p');
+  ajuda.className = 'q-help';
+  ajuda.textContent = f.req ? '' : t('d_opcional');
+  box.appendChild(ajuda);
+
+  if(f.type==='text' || f.type==='date'){
+    var inp = document.createElement('input');
+    inp.className='input'; inp.type = (f.type==='date'?'date':'text');
+    inp.value = val; inp.placeholder = ph;
+    inp.addEventListener('input', function(){ state.details[f.id] = inp.value; });
+    box.appendChild(inp);
+
+  } else if(f.type==='textarea'){
+    var ta = document.createElement('textarea');
+    ta.className='input'; ta.rows=4; ta.placeholder=ph;
+    ta.style.resize='vertical'; ta.style.minHeight='120px';
+    ta.value = val;
+    ta.addEventListener('input', function(){ state.details[f.id] = ta.value; });
+    box.appendChild(ta);
+
+  } else if(f.type==='select'){
+    var sel = document.createElement('select');
+    sel.className='select';
+    var vazio = document.createElement('option'); vazio.value=''; vazio.textContent=t('d_select'); sel.appendChild(vazio);
+    (f.opts||[]).forEach(function(o){
+      var op=document.createElement('option'); op.value=o; op.textContent=o;
+      if(val===o) op.selected=true; sel.appendChild(op);
+    });
+    sel.addEventListener('change', function(){ state.details[f.id]=sel.value; });
+    box.appendChild(sel);
+
+  } else if(f.type==='choice'){
+    var outro = !!state.details[f.id+'__other'];
+    var grid = document.createElement('div'); grid.className='chip-grid';
+    f.optsKey.forEach(function(k){
+      var texto = t(k);
+      var ehOutro = !!(f.other && k==='opt_outro');
+      var sel2 = ehOutro ? outro : (!outro && val===texto);
+      var chip = document.createElement('button');
+      chip.type='button';
+      chip.className='chip'+(sel2?' selected':'');
+      chip.textContent = texto;
+      chip.addEventListener('click', function(){
+        if(ehOutro){
+          state.details[f.id+'__other']=true;
+          state.details[f.id]='';
+          renderDetails();
+          var livre = box.querySelector('.campo-outro'); if(livre) livre.focus();
+          return;
+        }
+        state.details[f.id+'__other']=false;
+        state.details[f.id]=texto;
+        renderDetails();
+        setTimeout(nextStep, 180);
+      });
+      grid.appendChild(chip);
+    });
+    box.appendChild(grid);
+
+    if(outro){
+      var livre = document.createElement('input');
+      livre.className='input campo-outro'; livre.type='text';
+      livre.style.marginTop='12px'; livre.placeholder=t('d_outro_ph'); livre.value=val;
+      livre.addEventListener('input', function(){ state.details[f.id]=livre.value; });
+      box.appendChild(livre);
+    }
+  }
+}
+
+/* ------------------------------------------------------------
+   Navegação entre telas
+   ------------------------------------------------------------ */
+function showStep(n){
+  var telas = telasVisiveis();
+  if(n < 1) n = 1;
+  if(n > telas.length) n = telas.length;
+  state.step = n;
+
+  var tela = telas[n-1];
+  var passos = document.querySelectorAll('#route-form .step');
+  for(var i=0;i<passos.length;i++) passos[i].classList.remove('active');
+  var atual = document.querySelector('#route-form .step[data-step="'+tela.step+'"]');
+  if(atual) atual.classList.add('active');
+
+  $('stepNum').textContent = n;
+  $('stepTotal').textContent = telas.length;
+  $('progressFill').style.width = (telas.length>1 ? ((n-1)/(telas.length-1)*100) : 100) + '%';
+
+  if(tela.step===5) renderSlots();
+  if(tela.step===9) renderDetails();
+  if(tela.step===10) $('aceiteTermos').checked = state.aceiteTermos;
+  if(tela.step===8) renderReview();
+
+  var ultimo = (n === telas.length);
+  var rotulo = ultimo ? t('btn_submit')
+             : (state.voltarParaRevisao ? t('btn_back_review')
+             : (tela.step===7 && !state.files.cv ? t('btn_skip') : t('btn_next')));
+  $('btnNext').textContent = rotulo;
+  $('btnNextMobile').textContent = rotulo;
+
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function prevStep(){
+  if(state.step<=1){ navigate('home'); return; }
+  showStep(state.step-1);
+}
+function nextStep(){
+  if(!validarTela()) return;
+  var total = telasVisiveis().length;
+  if(state.voltarParaRevisao && state.step < total){
+    state.voltarParaRevisao = false;
+    showStep(total);          // veio de "EDITAR": volta para a revisão
+    return;
+  }
+  if(state.step >= total){ finalSubmit(); return; }
+  showStep(state.step+1);
+}
+
+function emailOk(e){ return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(String(e||'').trim()); }
+
+function validarTela(){
+  var tela = telaAtual();
+  var s = tela.step;
+
+  if(s===1){
+    if(!$('nome').value.trim() || !$('sobrenome').value.trim()){ toast(t('fields_required'), true); return false; }
+    return true;
+  }
+  if(s===2){
+    var e = $('email').value.trim().toLowerCase();
+    var c = $('email_conf').value.trim().toLowerCase();
+    var x = $('email_extra').value.trim().toLowerCase();
+    var hint = $('emailHint');
+    $('email').classList.remove('invalid'); $('email_conf').classList.remove('invalid'); $('email_extra').classList.remove('invalid');
+    if(!emailOk(e)){ $('email').classList.add('invalid'); hint.textContent=t('fields_required'); hint.classList.add('err'); toast(t('fields_required'), true); return false; }
+    if(e!==c){ $('email_conf').classList.add('invalid'); hint.textContent=t('q2_mismatch'); hint.classList.add('err'); toast(t('q2_mismatch'), true); return false; }
+    if(x && !emailOk(x)){ $('email_extra').classList.add('invalid'); toast(t('fields_required'), true); return false; }
+    if(x && x===e){ $('email_extra').classList.add('invalid'); toast(t('q2_extra_igual'), true); return false; }
+    hint.textContent=t('q2_ok'); hint.classList.remove('err');
+    $('email').value=e; $('email_conf').value=c; $('email_extra').value=x;
+    return true;
+  }
+  if(s===3){
+    var tel = $('telefone').value.replace(/\D/g,'');
+    if(tel.length<7){ toast(t('fields_required'), true); return false; }
+    $('whatsapp').value = formatPhone($('ddi').value, tel);
+    return true;
+  }
+  if(s===4){ if(!state.funcao){ toast(t('fields_required'), true); return false; } return true; }
+  if(s===5){
+    if(state.masterSlots.length===0) return true;             // agenda vazia: segue sem agendar
+    if(state.selectedSlots.length!==3){ toast(t('select_3'), true); return false; }
+    return true;
+  }
+  if(s===6){ if(!state.files.foto){ toast(t('fields_required'), true); return false; } return true; }
+  if(s===7){ return true; }                                   // currículo é opcional
+  if(s===9){
+    var f = (DETAILS_FIELDS[state.categoria]||[])[tela.fieldIdx];
+    if(f && f.req && !String(state.details[f.id]||'').trim()){ toast(t('fields_required'), true); return false; }
+    return true;
+  }
+  if(s===10){ if(!state.aceiteTermos){ toast(t('terms_required'), true); return false; } return true; }
+  return true;
+}
+
+function formatPhone(ddi, tel){
+  var n = String(tel||'').replace(/\D/g,'');
+  if(ddi==='55' && n.length>=10){
+    var cel = n.length===11;
+    return '+55 ('+n.substring(0,2)+') '+(cel?n.substring(2,7):n.substring(2,6))+'-'+(cel?n.substring(7,11):n.substring(6,10));
+  }
+  if(ddi==='1' && n.length===10) return '+1 ('+n.substring(0,3)+') '+n.substring(3,6)+'-'+n.substring(6,10);
+  if(ddi==='351' && n.length===9) return '+351 '+n.substring(0,3)+' '+n.substring(3,6)+' '+n.substring(6,9);
+  return '+'+ddi+' '+n;
+}
+
+/* ------------------------------------------------------------
+   Horários
+   ------------------------------------------------------------ */
+function carregarSlots(){
+  if(state.slotsCarregados || state.slotsCarregando) return;
+  state.slotsCarregando = true;
+  srv('getAvailableTimes', [], function(slots){
+    state.masterSlots = slots || [];
+    state.slotsCarregados = true;
+    state.slotsCarregando = false;
+    var tela = telaAtual();
+    if(tela && tela.step===5) renderSlots();
+  }, function(){
+    state.masterSlots = [];
+    state.slotsCarregados = true;      // não fica em laço infinito
+    state.slotsCarregando = false;
+    var tela = telaAtual();
+    if(tela && tela.step===5) renderSlots();
+  });
+}
+
+function renderSlots(){
+  var lista = $('slotList'); if(!lista) return;
+
+  if(!state.slotsCarregados){
+    lista.innerHTML = '<div class="loader"></div>';
+    carregarSlots();
+    return;
+  }
+  if(state.masterSlots.length===0){
+    lista.innerHTML = '<p style="text-align:center;color:var(--text-mute);padding:30px;">'+esc(t('q5_empty'))+'</p>';
+    renderEscolhidos();
+    return;
+  }
+
+  var grupos = {}, ordem = [];
+  state.masterSlots.forEach(function(sl){
+    var chave = sl.data + ' (' + sl.diaSemana + ')';
+    if(!grupos[chave]){ grupos[chave]=[]; ordem.push(chave); }
+    grupos[chave].push(sl);
+  });
+
+  lista.innerHTML = '';
+  ordem.forEach(function(dia){
+    var h = document.createElement('div');
+    h.className='slot-day-header'; h.textContent = dia;
+    lista.appendChild(h);
+
+    grupos[dia].forEach(function(sl){
+      var pos = state.selectedSlots.indexOf(sl.label);
+      var sel = pos >= 0;
+      var item = document.createElement('button');
+      item.type='button';
+      item.className='slot-item'+(sel?' selected':'');
+      item.setAttribute('data-slot', sl.label);
+      item.title = sel ? (pos+1)+'ª ' + t('slot_ord'+(pos+1)) : t('slot_q');
+
+      var esq = document.createElement('div');
+      var hora = document.createElement('div'); hora.className='slot-item-time'; hora.textContent = sl.hora;
+      var per  = document.createElement('div'); per.className='slot-item-period';
+      per.textContent = sl.periodo==='manha' ? 'Manhã · Morning · Mañana' : (sl.periodo==='tarde' ? 'Tarde · Afternoon' : 'Noite · Evening');
+      esq.appendChild(hora); esq.appendChild(per);
+
+      var chk = document.createElement('div'); chk.className='slot-check';
+      chk.textContent = sel ? String(pos+1) : '';
+      item.appendChild(esq); item.appendChild(chk);
+      item.addEventListener('click', function(){ pedirSlot(sl); });
+      lista.appendChild(item);
+    });
+  });
+  renderEscolhidos();
+}
+
+/* Confirma cada opção numa caixa própria e diz qual é a próxima —
+   sem isso a tela “volta ao normal” e não fica claro que faltam mais duas. */
+function pedirSlot(sl){
+  var pos = state.selectedSlots.indexOf(sl.label);
+  if(pos >= 0){
+    abrirModal({
+      titulo: t('slot_ja'),
+      texto: '<b>'+esc(sl.label)+'</b>',
+      ok: t('slot_remover_ok'),
+      aoConfirmar: function(){ state.selectedSlots.splice(pos,1); renderSlots(); }
+    });
+    return;
+  }
+  if(state.selectedSlots.length >= 3){ toast(t('select_3')); return; }
+
+  var n = state.selectedSlots.length + 1;
+  abrirModal({
+    titulo: t('slot_q'),
+    texto: '<b style="color:var(--text);font-size:1.05rem;">'+esc(sl.label)+'</b><br><br>'
+         + t('slot_passo').replace('{n}', n),
+    ok: t('slot_add').replace('{n}', n),
+    aoConfirmar: function(){
+      state.selectedSlots.push(sl.label);
+      renderSlots();
+      var faltam = 3 - state.selectedSlots.length;
+      toast(faltam > 0
+        ? t('slot_passo').replace(/<[^>]+>/g,'').replace('{n}', state.selectedSlots.length+1)
+        : t('slot_pronto'));
+    }
+  });
+}
+
+/* Lista as opções já guardadas, na ordem, com botão de remover. */
+function renderEscolhidos(){
+  var box = $('slotEscolhidos'); if(!box) return;
+  $('slotSelCount').textContent = state.selectedSlots.length;
+  var passo = $('slotPasso');
+  if(passo){
+    passo.innerHTML = state.selectedSlots.length >= 3
+      ? t('slot_pronto')
+      : t('slot_passo').replace('{n}', state.selectedSlots.length + 1);
+  }
+  if(!state.selectedSlots.length){ box.innerHTML=''; return; }
+  box.innerHTML = '';
+  state.selectedSlots.forEach(function(label, i){
+    var li = document.createElement('li');
+    var txt = document.createElement('span');
+    txt.innerHTML = '<span class="ord">'+(i+1)+'ª</span> ' + esc(label);
+    var rm = document.createElement('button');
+    rm.type='button'; rm.className='slot-remover'; rm.textContent='×';
+    rm.title = t('btn_cancel');
+    rm.addEventListener('click', function(){ state.selectedSlots.splice(i,1); renderSlots(); });
+    li.appendChild(txt); li.appendChild(rm);
+    box.appendChild(li);
+  });
+}
+
+/* ------------------------------------------------------------
+   Uploads
+   ------------------------------------------------------------ */
+function handleFile(input, zoneId, qual){
+  var file = input.files && input.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024){ toast(t('file_too_big'), true); input.value=''; return; }
+  state.files[qual] = file;
+  var z = $(zoneId);
+  z.classList.add('has-file');
+  z.querySelector('.upload-label').innerHTML = '<span class="upload-file-name">'+esc(file.name)+'</span>';
+  z.querySelector('.upload-help').textContent = (file.size/1024/1024).toFixed(2)+' MB';
+  showStep(state.step); // atualiza o rótulo do botão (PULAR → PRÓXIMO)
+}
+
+/* ------------------------------------------------------------
+   Revisão
+   ------------------------------------------------------------ */
+/* Cada linha da revisão sabe de qual tela veio e volta direto para lá.
+   Ninguém precisa refazer o cadastro do começo por causa de um typo. */
+function linhasRevisao(){
+  var telas = telasVisiveis();
+  var linhas = [];
+  telas.forEach(function(tl, idx){
+    var n = idx + 1;
+    if(tl.step===1) linhas.push({rot:t('q1_title'), val:($('nome').value+' '+$('sobrenome').value).trim(), tela:n});
+    else if(tl.step===2){
+      linhas.push({rot:t('q2_main'), val:$('email').value, tela:n});
+      if($('email_extra').value.trim()) linhas.push({rot:t('q2_extra'), val:$('email_extra').value, tela:n});
+    }
+    else if(tl.step===3) linhas.push({rot:'WhatsApp', val:$('whatsapp').value, tela:n});
+    else if(tl.step===4) linhas.push({rot:t('q4_title'), val:state.funcao, tela:n});
+    else if(tl.step===5) linhas.push({rot:t('q5_title'), val:state.selectedSlots.map(function(x,i){return (i+1)+'ª: '+x;}).join('\n'), tela:n});
+    else if(tl.step===6) linhas.push({rot:t('q6_title'), val:state.files.foto?state.files.foto.name:'—', tela:n});
+    else if(tl.step===7) linhas.push({rot:t('q7_title'), val:state.files.cv?state.files.cv.name:'—', tela:n});
+    else if(tl.step===9){
+      var f = (DETAILS_FIELDS[state.categoria]||[])[tl.fieldIdx];
+      if(f) linhas.push({rot:t(f.labelKey), val:state.details[f.id]||'—', tela:n});
+    }
+    else if(tl.step===10) linhas.push({rot:t('q10_title'), val:state.aceiteTermos?('✓ '+t('terms_ok')):'—', tela:n});
+  });
+  return linhas;
+}
+
+function renderReview(){
+  var rot = {voluntario:t('cat_vol_title'), embaixador:t('cat_emb_title'), representante:t('cat_rep_title')};
+  var box = $('reviewBox');
+  box.innerHTML = '';
+
+  var cab = document.createElement('h4');
+  cab.textContent = rot[state.categoria] || '';
+  box.appendChild(cab);
+
+  linhasRevisao().forEach(function(l){
+    var linha = document.createElement('div'); linha.className='rev-linha';
+    var esq = document.createElement('div');
+    var r = document.createElement('span'); r.className='rev-rot'; r.textContent = l.rot;
+    var v = document.createElement('div'); v.className='rev-val';
+    v.style.whiteSpace = 'pre-line';
+    v.textContent = l.val || '—';
+    esq.appendChild(r); esq.appendChild(v);
+
+    var b = document.createElement('button');
+    b.type='button'; b.className='rev-edit'; b.textContent = t('btn_edit');
+    b.title = t('tip_edit');
+    b.addEventListener('click', function(){ state.voltarParaRevisao = true; showStep(l.tela); });
+
+    linha.appendChild(esq); linha.appendChild(b);
+    box.appendChild(linha);
+  });
+}
+
+/* ------------------------------------------------------------
+   Envio
+   ------------------------------------------------------------ */
+function fileToB64(file){
+  return new Promise(function(res, rej){
+    if(!file) return res(null);
+    var r = new FileReader();
+    r.onload = function(){ res({name:file.name, mimeType:file.type||'application/octet-stream', data:String(r.result).split(',')[1]}); };
+    r.onerror = function(){ rej(new Error('leitura')); };
+    r.readAsDataURL(file);
+  });
+}
+
+function travarEnvio(travado){
+  $('btnNext').disabled = travado;
+  $('btnNextMobile').disabled = travado;
+  $('finalLoader').classList.toggle('hidden', !travado);
+}
+
+function finalSubmit(){
+  travarEnvio(true);
+  toast(t('sending'));
+
+  Promise.all([fileToB64(state.files.foto), fileToB64(state.files.cv)]).then(function(arq){
+    var funcaoCol = state.funcao;
+    if(state.categoria==='embaixador') funcaoCol = state.details.funcao_emb || '';
+    else if(state.categoria==='representante') funcaoCol = state.details.cargo || '';
+    else if(state.details.area_atuacao) funcaoCol = state.funcao + ' — ' + state.details.area_atuacao;
+
+    var rotulos = (DETAILS_FIELDS[state.categoria]||[])
+      .filter(function(f){ return !f.showIf || f.showIf(state.details); })
+      .map(function(f){ return {id:f.id, label:t(f.labelKey)}; });
+
+    var payload = {
+      categoria: state.categoria,
+      nome: $('nome').value, sobrenome: $('sobrenome').value,
+      email: $('email').value, email_extra: $('email_extra').value,
+      whatsapp: $('whatsapp').value,
+      funcao_cob: funcaoCol,
+      apelido: state.details.apelido || '',
+      details: state.details, detailsLabels: rotulos,
+      aceiteTermos: !!state.aceiteTermos,
+      opt1: state.selectedSlots[0]||'', opt2: state.selectedSlots[1]||'', opt3: state.selectedSlots[2]||'',
+      foto: arq[0], cv: arq[1]
+    };
+
+    srv('processFormBase64', [payload], function(res){
+      travarEnvio(false);
+      if(res && res.success){
+        $('successId').textContent = 'ID: '+res.id;
+        $('successP2').textContent = (state.selectedSlots.length===3) ? t('success_p2') : t('success_p2_alt');
+        navigate('success');
+      } else {
+        toast((res && res.message) ? res.message : t('error_conn'), true);
+      }
+    }, function(){ travarEnvio(false); toast(t('error_conn'), true); });
+
+  }).catch(function(){ travarEnvio(false); toast(t('error_conn'), true); });
+}
+
+/* ============================================================
+   LOGIN ADMIN
+   ============================================================ */
+function solicitarCodigo(){
+  var email = $('adminEmail').value.trim();
+  if(!emailOk(email)){ $('loginErr1').textContent = t('fields_required'); return; }
+  $('loginErr1').textContent=''; $('loginLoader1').classList.remove('hidden'); $('btnSendCode').disabled=true;
+  srv('solicitarAcessoAdmin', [email], function(res){
+    $('loginLoader1').classList.add('hidden'); $('btnSendCode').disabled=false;
+    if(res && res.success){ state.adminEmail = email; navigate('login-code'); $('adminCode').focus(); }
+    else $('loginErr1').textContent = (res && res.message) || t('error_conn');
+  }, function(){ $('loginLoader1').classList.add('hidden'); $('btnSendCode').disabled=false; $('loginErr1').textContent=t('error_conn'); });
+}
+
+function validarCodigo(){
+  var code = $('adminCode').value.trim();
+  if(code.length<6){ $('loginErr2').textContent = t('fields_required'); return; }
+  $('loginErr2').textContent=''; $('loginLoader2').classList.remove('hidden'); $('btnCheckCode').disabled=true;
+  srv('validarCodigoAdmin', [state.adminEmail, code], function(res){
+    $('loginLoader2').classList.add('hidden'); $('btnCheckCode').disabled=false;
+    if(res && res.success){ state.sessao = res.sessao; $('adminCode').value=''; navigate('dashboard'); }
+    else $('loginErr2').textContent = (res && res.message) || t('error_conn');
+  }, function(){ $('loginLoader2').classList.add('hidden'); $('btnCheckCode').disabled=false; $('loginErr2').textContent=t('error_conn'); });
+}
+
+function logout(){
+  pararRonda();
+  if(state.sessao) srv('encerrarSessao', [state.sessao], function(){}, function(){});
+  state.sessao=''; state.cache=null; state.adminEmail='';
+  navigate('home');
+}
+
+/* ============================================================
+   PAINEL
+   ============================================================ */
+function loadDashboard(){
+  if(!state.sessao){ navigate('login-email'); return; }
+  $('dashBody').innerHTML = '<tr><td colspan="5"><div class="loader-line"></div></td></tr>';
+  $('dashAgendaBody').innerHTML = '<tr><td colspan="4"><div class="loader-line"></div></td></tr>';
+  $('adminsBody').innerHTML = '<tr><td colspan="2"><div class="loader-line"></div></td></tr>';
+
+  srv('getDashboardData', [state.sessao], function(res){
+    if(!checarSessao(res)) return;
+    if(!res || !res.success){
+      $('dashBody').innerHTML = '<tr><td colspan="5" style="color:var(--danger);text-align:center;">'+esc((res&&res.message)||t('error_conn'))+'</td></tr>';
+      return;
+    }
+    state.cache = res;
+    var total = 0;
+    Object.keys(res.candidaturas).forEach(function(k){
+      var n = res.candidaturas[k].length;
+      total += n;
+      var el = $('cnt-'+k); if(el) el.textContent = n;
+    });
+    if($('cnt-todos')) $('cnt-todos').textContent = total;
+    renderDiag(res);
+    renderCatTable();
+    var total = 0;
+    Object.keys(res.candidaturas).forEach(function(k){ total += res.candidaturas[k].length; });
+    state.totalConhecido = total;
+    var b = document.querySelector('[data-refresh]');
+    if(b) b.classList.remove('show');
+    iniciarRonda();
+    renderAgenda(res.agenda);
+    renderAdmins(res.admins);
+  }, function(){ toast(t('error_conn'), true); });
+}
+
+/** Traduz o status cru da planilha para algo legível no painel. */
+function lerStatus(bruto){
+  var v = String(bruto||'').trim();
+  var m = v.match(/^CONFIRMADO:\s*(.+)$/i);
+  if(m)                       return {classe:'b-confirmed', texto:t('st_sched'), quando:m[1], fechado:true, agendado:true};
+  if(/^CONFIRMADO$/i.test(v)) return {classe:'b-confirmed', texto:t('st_appr'), fechado:true};
+  if(/^\d+\s*:/.test(v))      return {classe:'b-pending', texto:t('st_slots'), fechado:false, agendar:true};
+  return {classe:'b-pending', texto:t('st_wait'), fechado:false, agendar:false};
+}
+
+function listaAtual(){
+  if(!state.cache) return [];
+  if(state.currentCat==='todos'){
+    var tudo = [];
+    Object.keys(state.cache.candidaturas).forEach(function(k){
+      tudo = tudo.concat(state.cache.candidaturas[k]||[]);
+    });
+    return tudo;
+  }
+  return state.cache.candidaturas[state.currentCat] || [];
+}
+
+/* Ronda leve: só acende o botão de atualizar quando a planilha realmente cresceu. */
+function iniciarRonda(){
+  pararRonda();
+  state.ronda = setInterval(function(){
+    if(!state.sessao) return pararRonda();
+    srv('contarCadastros', [state.sessao], function(res){
+      if(!res || !res.success) return;
+      if(state.totalConhecido === null){ state.totalConhecido = res.total; return; }
+      var novos = res.total - state.totalConhecido;
+      var b = document.querySelector('[data-refresh]');
+      if(novos > 0 && b){ $('novosN').textContent = novos; b.classList.add('show'); }
+    }, function(){});
+  }, 45000);
+}
+function pararRonda(){ if(state.ronda){ clearInterval(state.ronda); state.ronda = null; } }
+
+/* Simetria: a grade de ações é sempre um retângulo de 2 colunas.
+   Se sobrar um botão ímpar, entra um vão invisível para fechar a forma. */
+function gradeAcoes(botoes){
+  var lista = botoes.slice();
+  if(lista.length % 2 !== 0) lista.push('<span class="acao-vao"></span>');
+  return '<div class="acoes-grid">' + lista.join('') + '</div>';
+}
+
+function renderCatTable(){
+  if(!state.cache) return;
+  var lista = listaAtual();
+  var body = $('dashBody');
+  var pend=0, conf=0;
+
+  if(lista.length===0){
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-mute);padding:40px;">'+esc(t('empty'))+'</td></tr>';
+  } else {
+    var html = '';
+    lista.forEach(function(c){
+      var st = lerStatus(c.status);
+      if(st.fechado) conf++; else pend++;
+
+      var botoes = ['<button class="action-btn" data-detalhes="'+esc(c.id)+'" data-cat="'+esc(c.categoria)+'" title="'+esc(t('tip_data'))+'">'+esc(t('act_data'))+'</button>'];
+      if(c.foto) botoes.push('<a href="'+esc(c.foto)+'" target="_blank" rel="noopener" class="action-btn" title="'+esc(t('tip_photo'))+'">FOTO</a>');
+      if(c.cv)   botoes.push('<a href="'+esc(c.cv)+'" target="_blank" rel="noopener" class="action-btn" title="'+esc(t('tip_cv'))+'">CV</a>');
+
+      var acao = '';
+      if(!st.fechado){
+        acao = st.agendar
+          ? '<a href="'+esc(APP_URL)+'?view=admin&id='+encodeURIComponent(c.id)+'&categoria='+encodeURIComponent(c.categoria)+'&t='+encodeURIComponent(c.token)+'" target="_blank" rel="noopener" class="action-btn" title="'+esc(t('tip_sched'))+'">'+esc(t('act_sched'))+'</a>'
+          : '<button class="action-btn" data-aprovar="'+esc(c.id)+'" data-cat="'+esc(c.categoria)+'" title="'+esc(t('tip_appr'))+'">'+esc(t('act_appr'))+'</button>';
+      } else if(st.agendado){
+        acao = '<button class="action-btn" data-reagendar="'+esc(c.id)+'" data-cat="'+esc(c.categoria)+'" title="'+esc(t('tip_resched'))+'">'+esc(t('act_resched'))+'</button>'
+             + '<button class="action-btn danger" data-cancelar="'+esc(c.id)+'" data-cat="'+esc(c.categoria)+'" title="'+esc(t('tip_cancelar'))+'">'+esc(t('act_cancel'))+'</button>';
+      }
+      if(acao) botoes = botoes.concat(acao.split('</button>').filter(Boolean).map(function(x){ return x+'</button>'; }));
+      botoes.push('<button class="action-btn danger" data-excluir="'+esc(c.id)+'" data-cat="'+esc(c.categoria)+'" title="'+esc(t('tip_del'))+'">'+esc(t('act_del'))+'</button>');
+
+      html += '<tr id="row-'+esc(c.id)+'">'
+        + '<td data-label="'+esc(t('th_date'))+'" style="color:var(--text-mute);font-size:.8rem;">'+esc(c.data||'—')+'</td>'
+        + '<td data-label="'+esc(t('th_cand'))+'" class="cel-cand"><b>'+esc(c.nome)+'</b>'
+        +   '<br><span style="font-size:.75rem;color:var(--text-mute);word-break:break-all;">'+esc(c.email||'')+'</span>'
+        +   '<br><span class="cat-tag">'+esc(c.categoriaLabel||c.categoria)+'</span></td>'
+        + '<td data-label="'+esc(t('th_func'))+'" style="color:var(--pink);font-weight:600;">'+esc(c.funcao||'—')+'</td>'
+        + '<td data-label="'+esc(t('th_stat'))+'"><span class="badge '+st.classe+'">'+esc(st.texto)+'</span>'
+        +   (st.quando ? '<div class="stat-quando">'+esc(st.quando)+'</div>' : '') + '</td>'
+        + '<td data-label="'+esc(t('th_anx'))+'">' + gradeAcoes(botoes) + '</td></tr>';
+    });
+    body.innerHTML = html;
+  }
+  $('statPend').textContent = pend;
+  $('statConf').textContent = conf;
+  $('statTotal').textContent = lista.length;
+}
+
+/** Faixa que mostra de onde vieram os dados — evita ficar no escuro quando algo some. */
+function renderDiag(res){
+  var el = $('diagStrip'); if(!el) return;
+  var partes = (res.diagnostico||[]).map(function(d){
+    return esc(d.aba)+': <b>'+d.linhas+'</b>'+(d.erro?' ⚠':'');
+  });
+  var total = (res.diagnostico||[]).reduce(function(a,d){ return a+d.linhas; }, 0);
+  var h = 'v <b>'+esc(res.versao||'?')+'</b> · '+esc(t('diag_read'))+' <b>'+esc(res.lido||'—')+'</b> · <b>'+total+'</b> '+esc(t('diag_rows'))
+        + ' · ' + partes.join(' · ');
+  if(res.planilhaUrl) h += ' · <a href="'+esc(res.planilhaUrl)+'" target="_blank" rel="noopener" title="'+esc(t('tip_sheet'))+'">'+esc(t('diag_sheet'))+'</a>';
+  (res.avisos||[]).forEach(function(a){ h += '<span class="aviso">⚠ '+esc(a)+'</span>'; });
+  el.innerHTML = h;
+}
+
+function renderAgenda(agenda){
+  var body = $('dashAgendaBody');
+  if(!agenda || !agenda.length){
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-mute);padding:40px;">'+esc(t('empty'))+'</td></tr>';
+    return;
+  }
+  body.innerHTML = agenda.map(function(a){
+    return '<tr>'
+      + '<td data-label="'+esc(t('th_when_date'))+'" style="color:var(--pink);font-weight:600;">'+esc(a.data)+'</td>'
+      + '<td data-label="'+esc(t('th_when_hour'))+'">'+esc(a.hora)+'</td>'
+      + '<td data-label="'+esc(t('th_event'))+'">'+esc(a.titulo)+'</td>'
+      + '<td data-label="'+esc(t('th_guests'))+'" style="color:var(--text-mute);word-break:break-all;">'+esc(a.convidados)+'</td>'
+      + '<td data-label="'+esc(t('th_anx'))+'">' + gradeAcoes([
+            '<button class="action-btn" data-reagendar="'+esc(a.id)+'" data-cat="'+esc(a.categoria)+'" title="'+esc(t('tip_resched'))+'">'+esc(t('act_resched'))+'</button>',
+            '<button class="action-btn danger" data-cancelar="'+esc(a.id)+'" data-cat="'+esc(a.categoria)+'" title="'+esc(t('tip_cancelar'))+'">'+esc(t('act_cancel'))+'</button>'
+          ]) + '</td></tr>';
+  }).join('');
+}
+
+/* Remarcar move o MESMO evento do Calendar. A planilha continua sendo a fonte. */
+function reagendar(id, cat){
+  var d = new Date(Date.now() + 86400000);
+  var pad = function(n){ return (n<10?'0':'')+n; };
+  var sugestao = d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T10:00';
+  abrirModal({
+    titulo: t('resched_t'),
+    texto: t('resched_d'),
+    campos: [
+      {id:'quando', rotulo:t('resched_when'), tipo:'datetime-local', valor:sugestao},
+      {id:'aviso',  rotulo:t('resched_note'), tipo:'textarea'}
+    ],
+    aoConfirmar: function(v){
+      if(!v.quando){ toast(t('fields_required'), true); return false; }
+      toast(t('sending'));
+      srv('reagendarOnboarding', [state.sessao, id, cat, v.quando, v.aviso], function(res){
+        if(!checarSessao(res)) return;
+        if(res && res.success){ toast(res.message); loadDashboard(); }
+        else toast((res&&res.message)||t('error_conn'), true);
+      }, function(){ toast(t('error_conn'), true); });
+    }
+  });
+}
+
+function cancelarAgendamento(id, cat){
+  abrirModal({
+    titulo: t('cancel_t'),
+    texto: t('cancel_d'),
+    campos: [{id:'motivo', rotulo:t('cancel_note'), tipo:'textarea'}],
+    ok: t('act_cancel'),
+    aoConfirmar: function(v){
+      toast(t('sending'));
+      srv('cancelarOnboarding', [state.sessao, id, cat, v.motivo], function(res){
+        if(!checarSessao(res)) return;
+        if(res && res.success){ toast(res.message); loadDashboard(); }
+        else toast((res&&res.message)||t('error_conn'), true);
+      }, function(){ toast(t('error_conn'), true); });
+    }
+  });
+}
+
+
+
+function renderAdmins(admins){
+  var body = $('adminsBody');
+  body.innerHTML = (admins||[]).map(function(a){
+    return '<tr><td data-label="'+esc(t('th_admins'))+'" style="word-break:break-all;">'+esc(a)+'</td>'
+      + '<td data-label="'+esc(t('th_action'))+'" style="text-align:right;"><button class="action-btn danger" data-rmadmin="'+esc(a)+'">×</button></td></tr>';
+  }).join('');
+}
+
+/* ============================================================
+   TELA DE APROVAÇÃO (link do e-mail)
+   ============================================================ */
+function renderAprovacao(){
+  var box = $('adminOptions');
+  if(!box || typeof APROV === 'undefined') return;
+  box.innerHTML = '';
+  var opcoes = String(APROV.opcoes||'').split(' | ').map(function(p){
+    var i = p.indexOf(': ');
+    return i>=0 ? p.substring(i+2).trim() : '';
+  }).filter(Boolean);
+
+  if(!opcoes.length){
+    box.innerHTML = '<p style="color:var(--text-mute);text-align:center;">'+esc(t('empty'))+'</p>';
+    return;
+  }
+  opcoes.forEach(function(h){
+    var b = document.createElement('button');
+    b.type='button'; b.className='btn btn-ghost';
+    b.style.cssText='text-align:left;justify-content:flex-start;text-transform:none;letter-spacing:0;font-size:.95rem;';
+    b.textContent = h;
+    b.addEventListener('click', function(){ confirmarHorario(h); });
+    box.appendChild(b);
+  });
+}
+
+function confirmarHorario(horario){
+  if(!confirm(t('sched_confirm')+' '+horario+'?')) return;
+  var box = $('adminOptions');
+  box.innerHTML = '<div class="loader"></div><p style="text-align:center;color:var(--pink);">'+esc(t('sending'))+'</p>';
+  srv('confirmarAgendamento', [APROV.id, horario, APROV.cat, APROV.token], function(res){
+    if(res && res.success){
+      document.body.innerHTML = '<div class="success-wrap"><div class="success-card"><div class="success-icon">✓</div>'
+        + '<h1>'+esc(t('sched_done'))+'</h1><p>'+esc(res.message||'')+'</p>'
+        + '<p style="font-size:.8rem;margin-top:24px;">'+esc(t('sched_close'))+'</p></div></div>';
+    } else {
+      toast((res && res.message) || t('error_conn'), true);
+      renderAprovacao();
+    }
+  }, function(){ toast(t('error_conn'), true); renderAprovacao(); });
+}
+
+/* ============================================================
+   LIGAÇÕES DE EVENTO
+   ============================================================ */
+function ligarEventos(){
+  var langs = document.querySelectorAll('.lang-switcher button');
+  for(var i=0;i<langs.length;i++){
+    (function(b){ b.addEventListener('click', function(){ setLanguage(b.getAttribute('data-lang')); }); })(langs[i]);
+  }
+  if(VIEW_MODE==='admin'){
+    // Na tela de aprovação não existem rotas: os botões levam de volta à plataforma.
+    on($('brandBtn'), 'click', function(){ if(APP_URL) window.open(APP_URL, '_blank', 'noopener'); });
+    on($('navAdmin'), 'click', function(){ if(APP_URL) window.open(APP_URL, '_blank', 'noopener'); });
+  } else {
+    on($('brandBtn'), 'click', function(){ navigate('home'); });
+    on($('navAdmin'), 'click', function(){ navigate(state.sessao ? 'dashboard' : 'login-email'); });
+  }
+
+  var cards = document.querySelectorAll('.category-card');
+  for(var j=0;j<cards.length;j++){
+    (function(c){ c.addEventListener('click', function(){ startCategory(c.getAttribute('data-cat')); }); })(cards[j]);
+  }
+
+  on($('btnNext'), 'click', nextStep);
+  on($('btnNextMobile'), 'click', nextStep);
+  on($('btnPrev'), 'click', prevStep);
+  on($('btnPrevMobile'), 'click', prevStep);
+  on($('btnBackHome'), 'click', function(){ navigate('home'); });
+
+  on($('telefone'), 'input', function(){ this.value = this.value.replace(/[^0-9]/g,''); });
+  on($('adminCode'), 'input', function(){ this.value = this.value.replace(/[^0-9]/g,''); });
+  on($('foto'), 'change', function(){ handleFile(this, 'uploadFoto', 'foto'); });
+  on($('cv'), 'change', function(){ handleFile(this, 'uploadCv', 'cv'); });
+  on($('aceiteTermos'), 'change', function(){ state.aceiteTermos = this.checked; });
+
+  on($('btnSendCode'), 'click', solicitarCodigo);
+  on($('btnCheckCode'), 'click', validarCodigo);
+  on($('btnLoginHome'), 'click', function(){ navigate('home'); });
+  on($('btnCodeBack'), 'click', function(){ navigate('login-email'); });
+  on($('adminEmail'), 'keydown', function(e){ if(e.key==='Enter') solicitarCodigo(); });
+  on($('adminCode'), 'keydown', function(e){ if(e.key==='Enter') validarCodigo(); });
+  on($('btnLogout'), 'click', logout);
+  on($('btnAddAdmin'), 'click', function(){
+    var e = $('newAdminEmail').value.trim();
+    if(!emailOk(e)){ toast(t('fields_required'), true); return; }
+    srv('addAdminEmail', [state.sessao, e], function(res){
+      if(!checarSessao(res)) return;
+      if(res && res.success){ $('newAdminEmail').value=''; loadDashboard(); }
+      else toast((res && res.message)||t('error_conn'), true);
+    }, function(){ toast(t('error_conn'), true); });
+  });
+
+  var tabs = document.querySelectorAll('#catTabs .tab');
+  for(var k=0;k<tabs.length;k++){
+    (function(b){ b.addEventListener('click', function(){
+      for(var z=0;z<tabs.length;z++) tabs[z].classList.remove('active');
+      b.classList.add('active');
+      state.currentCat = b.getAttribute('data-cat');
+      renderCatTable();
+    }); })(tabs[k]);
+  }
+
+  var mods = document.querySelectorAll('.dash-menu-item');
+  for(var m=0;m<mods.length;m++){
+    (function(b){ b.addEventListener('click', function(){
+      for(var z=0;z<mods.length;z++) mods[z].classList.remove('active');
+      b.classList.add('active');
+      var painel = document.querySelectorAll('.dash-module');
+      for(var y=0;y<painel.length;y++) painel[y].classList.remove('active');
+      var alvo = $('mod-'+b.getAttribute('data-mod'));
+      if(alvo) alvo.classList.add('active');
+      if(window.innerWidth<=1024) $('dashSidebar').classList.remove('open');
+    }); })(mods[m]);
+  }
+
+  var refresh = document.querySelectorAll('[data-refresh]');
+  for(var r=0;r<refresh.length;r++) refresh[r].addEventListener('click', loadDashboard);
+
+  on($('hamburger'), 'click', function(e){
+    e.stopPropagation();
+    // Em telas largas a barra é fixa: aqui ela é recolhida de verdade.
+    var sb = $('dashSidebar');
+    if(window.innerWidth > 1024) sb.classList.toggle('recolhida');
+    else sb.classList.toggle('open');
+  });
+  on($('modalClose'), 'click', function(){ $('detalhesModal').classList.remove('show'); });
+  on($('detalhesModal'), 'click', function(e){ if(e.target===this) this.classList.remove('show'); });
+
+  // Ações da tabela (delegação — sobrevive a re-render)
+  on($('dashBody'), 'click', function(e){
+    var b = e.target.closest ? e.target.closest('button') : null;
+    if(!b) return;
+    var cat = b.getAttribute('data-cat');
+    if(b.hasAttribute('data-detalhes')) return verDetalhes(b.getAttribute('data-detalhes'), cat);
+    if(b.hasAttribute('data-aprovar')) return aprovar(b.getAttribute('data-aprovar'), cat);
+    if(b.hasAttribute('data-excluir')) return excluir(b.getAttribute('data-excluir'), cat);
+    if(b.hasAttribute('data-reagendar')) return reagendar(b.getAttribute('data-reagendar'), cat);
+    if(b.hasAttribute('data-cancelar')) return cancelarAgendamento(b.getAttribute('data-cancelar'), cat);
+  });
+  on($('dashAgendaBody'), 'click', function(e){
+    var b = e.target.closest ? e.target.closest('button') : null;
+    if(!b) return;
+    var cat = b.getAttribute('data-cat');
+    if(b.hasAttribute('data-reagendar')) return reagendar(b.getAttribute('data-reagendar'), cat);
+    if(b.hasAttribute('data-cancelar')) return cancelarAgendamento(b.getAttribute('data-cancelar'), cat);
+  });
+  on($('adminsBody'), 'click', function(e){
+    var b = e.target.closest ? e.target.closest('button[data-rmadmin]') : null;
+    if(!b) return;
+    if(!confirm(t('remove_q'))) return;
+    srv('removeAdminEmail', [state.sessao, b.getAttribute('data-rmadmin')], function(res){
+      if(!checarSessao(res)) return;
+      if(res && res.success) loadDashboard(); else toast((res&&res.message)||t('error_conn'), true);
+    }, function(){ toast(t('error_conn'), true); });
+  });
+
+  document.addEventListener('click', function(e){
+    if(window.innerWidth>1024) return;
+    var sb = $('dashSidebar'), ham = $('hamburger');
+    if(sb && sb.classList.contains('open') && !sb.contains(e.target) && e.target!==ham){
+      sb.classList.remove('open');
+    }
+  });
+}
+
+function verDetalhes(id, cat){
+  var lista = (state.cache && state.cache.candidaturas[cat]) || [];
+  var c = null;
+  for(var i=0;i<lista.length;i++){ if(lista[i].id===id){ c = lista[i]; break; } }
+  if(!c) return;
+
+  var h = '<h4 style="margin-top:0;color:var(--pink);font-family:var(--font-display);">'+esc(c.nome)+(c.apelido?' ("'+esc(c.apelido)+'")':'')+'</h4>';
+  h += '<p style="margin:6px 0;"><b>E-mail:</b> '+esc(c.email||'—')+'</p>';
+  if(c.emailExtra) h += '<p style="margin:6px 0;"><b>E-mail adicional:</b> '+esc(c.emailExtra)+'</p>';
+  h += '<p style="margin:6px 0;"><b>WhatsApp:</b> '+esc(c.whatsapp||'—')+'</p>';
+  h += '<p style="margin:6px 0;"><b>Status:</b> '+esc(c.status||'—')+'</p>';
+  h += '<hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">';
+  var linhas = String(c.detalhes||'').split('\n').filter(Boolean);
+  h += linhas.length
+    ? linhas.map(function(l){ var i=l.indexOf(':'); return '<p style="margin:6px 0;"><b>'+esc(i>0?l.substring(0,i):l)+':</b> '+esc(i>0?l.substring(i+1).trim():'')+'</p>'; }).join('')
+    : '<p style="color:var(--text-mute);">—</p>';
+  if(c.termos) h += '<hr style="border:none;border-top:1px solid var(--border);margin:14px 0;"><p style="margin:6px 0;color:var(--text-mute);font-size:.8rem;"><b>Termos:</b> '+esc(c.termos)+'</p>';
+
+  $('detalhesModalBody').innerHTML = h;
+  $('detalhesModal').classList.add('show');
+}
+
+function aprovar(id, cat){
+  if(!confirm(t('approve_q'))) return;
+  var row = $('row-'+id); if(row) row.style.opacity='.3';
+  srv('aprovarCandidato', [state.sessao, id, cat], function(res){
+    if(!checarSessao(res)) return;
+    if(res && res.success) loadDashboard();
+    else { if(row) row.style.opacity='1'; toast((res&&res.message)||t('error_conn'), true); }
+  }, function(){ if(row) row.style.opacity='1'; toast(t('error_conn'), true); });
+}
+
+function excluir(id, cat){
+  if(!confirm(t('delete_q'))) return;
+  var row = $('row-'+id); if(row) row.style.opacity='.3';
+  srv('deletarCandidato', [state.sessao, id, cat], function(res){
+    if(!checarSessao(res)) return;
+    if(res && res.success) loadDashboard();
+    else { if(row) row.style.opacity='1'; toast((res&&res.message)||t('error_conn'), true); }
+  }, function(){ if(row) row.style.opacity='1'; toast(t('error_conn'), true); });
+}
+
+/* ============================================================
+   INÍCIO
+   ============================================================ */
+window.addEventListener('DOMContentLoaded', function(){
+  try { console.log('Plataforma COB — versão ' + (typeof VERSAO!=='undefined'?VERSAO:'?')); } catch(e){}
+  ligarEventos();
+  setLanguage('PT');
+  state.flow = buildFlow('voluntario');
+  if($('adminOptions')) renderAprovacao();
+  // O botão "ACESSAR O PAINEL" do e-mail abre direto na validação de e-mail.
+  if(ABRIR_PAINEL && $('route-login-email')){ navigate('login-email'); $('adminEmail').focus(); }
+});
+</script>
