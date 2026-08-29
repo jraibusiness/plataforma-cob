@@ -3,12 +3,12 @@
 var FLOWS = {
   voluntario:   [1,2,3,4,9,5,6,10,8],
   embaixador:   [1,2,3,9,6,7,10,8],
-  representante:[1,2,3,9,6,10,8]
+  representante:[0,1,2,3,9,6,10,8]
 };
 
 var state = {
   step:1, categoria:'voluntario', flow:[], selectedSlots:[], funcao:'',
-  details:{}, aceiteTermos:false,
+  details:{}, aceiteTermos:false, formato:'', formatoOk:null,
   files:{foto:null, cv:null},
   adminEmail:'', sessao:'',
   masterSlots:[], slotsCarregados:false, slotsCarregando:false,
@@ -18,6 +18,16 @@ var state = {
 
 /* GTs do COB — apenas voluntários (pedido da coordenação: embaixadores e
    representantes não escolhem GT). */
+/* Formatos de grupo. "aceito:false" não é recusa automática: leva a uma tela
+   que explica o escopo e oferece registro de interesse (padrão VA.gov). */
+var FORMATOS = [
+  {chave:'fmt_sinfonica',     aceito:true},
+  {chave:'fmt_comunitaria',   aceito:true},
+  {chave:'fmt_sociocultural', aceito:true},
+  {chave:'fmt_universidade',  aceito:true},
+  {chave:'fmt_outro',         aceito:false}
+];
+
 var FUNCOES = {
   voluntario: ['GT Gestão e Comunicação','GT Orquestrando Arquivo','Coordenação Geral','Outra Frente']
 };
@@ -238,6 +248,28 @@ function resetUpload(id, tapKey, fmtKey){
   z.querySelector('.upload-help').textContent = t(fmtKey);
 }
 
+function renderFormatos(){
+  var grid = $('formatoGrid'); if(!grid) return;
+  grid.innerHTML = '';
+  FORMATOS.forEach(function(f){
+    var texto = t(f.chave);
+    var chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip' + (state.formato===texto ? ' selected' : '');
+    chip.textContent = texto;
+    chip.addEventListener('click', function(){
+      state.formato = texto;
+      state.formatoOk = f.aceito;
+      renderFormatos();
+      setTimeout(function(){
+        if(f.aceito){ nextStep(); }
+        else { navigate('fora-escopo'); }
+      }, 200);
+    });
+    grid.appendChild(chip);
+  });
+}
+
 function renderFuncoes(){
   var grid = $('funcaoGrid'); if(!grid) return;
   grid.innerHTML = '';
@@ -364,6 +396,7 @@ function showStep(n){
   $('stepTotal').textContent = telas.length;
   $('progressFill').style.width = (telas.length>1 ? ((n-1)/(telas.length-1)*100) : 100) + '%';
 
+  if(tela.step===0) renderFormatos();
   if(tela.step===5) renderSlots();
   if(tela.step===9) renderDetails();
   if(tela.step===10) $('aceiteTermos').checked = state.aceiteTermos;
@@ -401,6 +434,11 @@ function validarTela(){
   var tela = telaAtual();
   var s = tela.step;
 
+  if(s===0){
+    if(!state.formato){ toast(t('fields_required'), true); return false; }
+    if(state.formatoOk === false){ navigate('fora-escopo'); return false; }
+    return true;
+  }
   if(s===1){
     if(!$('nome').value.trim() || !$('sobrenome').value.trim()){ toast(t('fields_required'), true); return false; }
     return true;
@@ -513,7 +551,7 @@ function renderSlots(){
       var esq = document.createElement('div');
       var hora = document.createElement('div'); hora.className='slot-item-time'; hora.textContent = sl.hora;
       var per  = document.createElement('div'); per.className='slot-item-period';
-      per.textContent = sl.periodo==='manha' ? 'Manhã · Morning · Mañana' : (sl.periodo==='tarde' ? 'Tarde · Afternoon' : 'Noite · Evening');
+      per.textContent = t('per_' + sl.periodo);   // só o idioma da interface
       esq.appendChild(hora); esq.appendChild(per);
 
       var chk = document.createElement('div'); chk.className='slot-check';
@@ -695,6 +733,7 @@ function finalSubmit(){
       whatsapp: $('whatsapp').value,
       funcao_cob: funcaoCol,
       apelido: state.details.apelido || '',
+      formatoGrupo: state.formato || '',
       details: state.details, detailsLabels: rotulos,
       aceiteTermos: !!state.aceiteTermos,
       opt1: state.selectedSlots[0]||'', opt2: state.selectedSlots[1]||'', opt3: state.selectedSlots[2]||'',
@@ -924,13 +963,27 @@ function reagendar(id, cat){
     aoConfirmar: function(v){
       if(!v.quando){ toast(t('fields_required'), true); return false; }
       toast(t('sending'));
-      srv('reagendarOnboarding', [state.sessao, id, cat, v.quando, v.aviso], function(res){
-        if(!checarSessao(res)) return;
-        if(res && res.success){ toast(res.message); loadDashboard(); }
-        else toast((res&&res.message)||t('error_conn'), true);
-      }, function(){ toast(t('error_conn'), true); });
+      enviarRemarcacao(id, cat, v.quando, v.aviso, false);
     }
   });
+}
+
+/** Remarca; se houver conflito na agenda, oferece confirmar mesmo assim. */
+function enviarRemarcacao(id, cat, quando, aviso, forcar){
+  srv('reagendarOnboarding', [state.sessao, id, cat, quando, aviso, !!forcar], function(res){
+    if(!checarSessao(res)) return;
+    if(res && res.success){ toast(res.message); loadDashboard(); return; }
+    if(res && res.conflito){
+      abrirModal({
+        titulo: t('conflito_t'),
+        texto: res.message + ' ' + t('conflito_d'),
+        ok: t('conflito_ok'),
+        aoConfirmar: function(){ toast(t('sending')); enviarRemarcacao(id, cat, quando, aviso, true); }
+      });
+      return;
+    }
+    toast((res&&res.message)||t('error_conn'), true);
+  }, function(){ toast(t('error_conn'), true); });
 }
 
 function cancelarAgendamento(id, cat){
@@ -1029,6 +1082,8 @@ function ligarEventos(){
   on($('btnPrev'), 'click', prevStep);
   on($('btnPrevMobile'), 'click', prevStep);
   on($('btnBackHome'), 'click', function(){ navigate('home'); });
+  on($('btnInteresse'), 'click', enviarInteresse);
+  on($('btnForaHome'), 'click', function(){ navigate('home'); });
 
   on($('telefone'), 'input', function(){ this.value = this.value.replace(/[^0-9]/g,''); });
   on($('adminCode'), 'input', function(){ this.value = this.value.replace(/[^0-9]/g,''); });
@@ -1123,6 +1178,35 @@ function ligarEventos(){
     if(sb && sb.classList.contains('open') && !sb.contains(e.target) && e.target!==ham){
       sb.classList.remove('open');
     }
+  });
+}
+
+function enviarInteresse(){
+  var nome = $('intNome').value.trim();
+  var email = $('intEmail').value.trim();
+  if(!nome || !emailOk(email)){ $('intErro').textContent = t('fields_required'); return; }
+  $('intErro').textContent = '';
+  $('intLoader').classList.remove('hidden');
+  $('btnInteresse').disabled = true;
+  srv('registrarInteresse', [{
+    nome: nome, email: email,
+    grupo: $('intGrupo').value.trim(),
+    cidade: $('intCidade').value.trim(),
+    formato: state.formato || ''
+  }], function(res){
+    $('intLoader').classList.add('hidden');
+    $('btnInteresse').disabled = false;
+    if(res && res.success){
+      $('successId').textContent = '';
+      $('successP2').textContent = t('fora_ok');
+      navigate('success');
+    } else {
+      $('intErro').textContent = (res && res.message) || t('error_conn');
+    }
+  }, function(){
+    $('intLoader').classList.add('hidden');
+    $('btnInteresse').disabled = false;
+    $('intErro').textContent = t('error_conn');
   });
 }
 
