@@ -34,12 +34,13 @@
  * Script Properties têm prioridade sobre estes padrões.
  */
 /** Carimbo de versão — confirma qual código está realmente publicado. */
-const VERSAO = "2026-08-27 · v5";
+const VERSAO = "2026-08-29 · v11";
 
 const DEF_FOLDER_ID = "1jz6vfaFTkRqNP7FvrT4ECDrl5l4DHh2C";
 const DEF_SS_ID     = "1NIzil2c1OUhKaYT6jUE1PaqilHWiMb8myHVpYqOuVts";
 const DEF_ADMIN     = "jr.conductor83@gmail.com";
 const DEF_CONTATO   = "orquestrasbrasileiras@gmail.com";
+const DEF_CALENDAR_ID = "orquestrasbrasileiras@gmail.com";  // agenda do COB, nunca a do desenvolvedor
 
 function P_(chave) { return PropertiesService.getScriptProperties().getProperty(chave) || ""; }
 function FOLDER_ID_()  { return P_("COB_FOLDER_ID")   || DEF_FOLDER_ID; }
@@ -49,13 +50,16 @@ function CONTATO_()    { return P_("COB_CONTATO")     || DEF_CONTATO; }
 
 /** Agenda usada para ler disponibilidade e criar eventos. */
 function CAL_() {
-  const id = P_("COB_CALENDAR_ID");
-  if (id) {
-    const c = CalendarApp.getCalendarById(id);
-    if (c) return c;
-    throw new Error("Agenda COB_CALENDAR_ID não encontrada ou sem permissão: " + id);
+  const id = P_("COB_CALENDAR_ID") || DEF_CALENDAR_ID;
+  const c = CalendarApp.getCalendarById(id);
+  if (!c) {
+    // Sem fallback: cair na agenda pessoal sem avisar é pior do que quebrar.
+    throw new Error("AGENDA_INDISPONIVEL: não foi possível abrir a agenda " + id
+      + ". Compartilhamento não basta — a agenda precisa estar ADICIONADA à conta que "
+      + "autorizou o script (Google Agenda › Outras agendas › Inscrever-se em agenda), "
+      + "com permissão de fazer alterações nos eventos.");
   }
-  return CalendarApp.getDefaultCalendar();
+  return c;
 }
 
 /**
@@ -137,6 +141,13 @@ function garantirAbasBase() {
     s.appendRow(["GT GESTÃO E COMUNICAÇÃO", "Lideranças Ativas"]);
   }
 
+  if (!ss.getSheetByName("Interesse_Futuro")) {
+    const s2 = ss.insertSheet("Interesse_Futuro");
+    s2.appendRow(["DATA","NOME","EMAIL","GRUPO","FORMATO","CIDADE_UF","MENSAGEM"]);
+    s2.getRange(1, 1, 1, 7).setFontWeight("bold");
+    s2.setFrozenRows(1);
+  }
+
   _garantirConfigAgenda(ss);
 
   Object.keys(CATEGORIAS).forEach(function (key) {
@@ -166,6 +177,7 @@ function _garantirConfigAgenda(ss) {
     s.clear();
     s.appendRow(["HORA_INICIO","HORA_FIM","DIAS_HORIZONTE","ANTECEDENCIA_HORAS","INCLUIR_SABADO"]);
     s.getRange(1, 1, 1, 5).setFontWeight("bold");
+    s.getRange(2, 1, 1, 4).setNumberFormat("0");   // impede o Sheets de tratar como hora
     s.appendRow([CFG_PADRAO.inicio, CFG_PADRAO.fim, CFG_PADRAO.horizonte, CFG_PADRAO.antecedencia, "NAO"]);
     s.getRange("A4").setValue("Editar apenas a linha 2. Use números inteiros (10, 18), não 10:00.");
     Logger.log("Configuracoes_Agenda estava em formato antigo e foi normalizada.");
@@ -176,37 +188,56 @@ function _garantirConfigAgenda(ss) {
     s = ss.insertSheet("Configuracoes_Agenda");
     s.appendRow(["HORA_INICIO","HORA_FIM","DIAS_HORIZONTE","ANTECEDENCIA_HORAS","INCLUIR_SABADO"]);
     s.getRange(1, 1, 1, 5).setFontWeight("bold");
+    s.getRange(2, 1, 1, 4).setNumberFormat("0");
     s.appendRow([CFG_PADRAO.inicio, CFG_PADRAO.fim, CFG_PADRAO.horizonte, CFG_PADRAO.antecedencia, "NAO"]);
-    s.getRange("A4").setValue("Editar apenas a linha 2. INCLUIR_SABADO aceita SIM ou NAO.");
+    s.getRange("A4").setValue("Editar apenas a linha 2. Use números inteiros (10, 18), não 10:00.");
   }
   return s;
+}
+
+/**
+ * Deixa a linha 2 da Configuracoes_Agenda em números inteiros simples.
+ * Roda toda vez: se a célula estiver formatada como hora, o Sheets devolve
+ * o número 10 como a data 09/01/1900 (dez DIAS), e getHours() daria 0.
+ */
+function _sanearConfigAgenda(s) {
+  const rng = s.getRange(2, 1, 1, 4);
+  rng.setNumberFormat("0");                       // remove qualquer formato de hora
+  const v = rng.getValues()[0];
+  const padroes = [CFG_PADRAO.inicio, CFG_PADRAO.fim, CFG_PADRAO.horizonte, CFG_PADRAO.antecedencia];
+  const limites = [[0, 23], [1, 24], [1, 90], [0, 720]];
+  const saida = [];
+  let mudou = false;
+
+  for (let i = 0; i < 4; i++) {
+    let n = v[i];
+    if (n instanceof Date) { n = null; mudou = true; }        // célula era hora: valor não confiável
+    else if (typeof n === "string") {
+      n = parseInt(String(n).split(/[:h\s]/)[0].replace(/\D/g, ""), 10);
+    }
+    if (typeof n !== "number" || !isFinite(n) || n < limites[i][0] || n > limites[i][1]) {
+      n = padroes[i]; mudou = true;
+    }
+    saida.push(Math.floor(n));
+  }
+  if (saida[1] <= saida[0]) {                                  // fim precisa ser depois do início
+    saida[0] = CFG_PADRAO.inicio; saida[1] = CFG_PADRAO.fim; mudou = true;
+  }
+  if (mudou) {
+    rng.setValues([saida]);
+    Logger.log("Configuracoes_Agenda saneada para: " + saida.join(" | "));
+  }
+  return saida;
 }
 
 function _lerConfigAgenda() {
   try {
     const s = _garantirConfigAgenda(SpreadsheetApp.openById(SS_ID_()));
-    const v = s.getRange(2, 1, 1, 5).getDisplayValues()[0];
-    // Lê a HORA. "10:00" precisa virar 10, não 1000 — por isso corta no primeiro
-    // separador antes de remover o que não for dígito.
-    const hora = function (x, pad) {
-      const bruto = String(x == null ? "" : x).trim();
-      if (!bruto) return pad;
-      const n = parseInt(bruto.split(/[:h\s]/)[0].replace(/\D/g, ""), 10);
-      return isNaN(n) ? pad : n;
-    };
-    // Lê um número simples (dias, horas de antecedência)
-    const num = function (x, pad) {
-      const n = parseInt(String(x == null ? "" : x).replace(/\D/g, ""), 10);
-      return isNaN(n) ? pad : n;
-    };
-    return {
-      inicio:       Math.min(23, Math.max(0,  hora(v[0], CFG_PADRAO.inicio))),
-      fim:          Math.min(24, Math.max(1,  hora(v[1], CFG_PADRAO.fim))),
-      horizonte:    Math.min(90, Math.max(1,  num(v[2], CFG_PADRAO.horizonte))),
-      antecedencia: Math.min(720, Math.max(0, num(v[3], CFG_PADRAO.antecedencia))),
-      sabado:       /^s/i.test(String(v[4] || "").trim())
-    };
+    const v = _sanearConfigAgenda(s);
+    const sab = String(s.getRange(2, 5).getDisplayValue() || "").trim();
+    return { inicio: v[0], fim: v[1], horizonte: v[2], antecedencia: v[3], sabado: /^s/i.test(sab) };
   } catch (e) {
+    Logger.log("_lerConfigAgenda: " + e);
     return { inicio: CFG_PADRAO.inicio, fim: CFG_PADRAO.fim, horizonte: CFG_PADRAO.horizonte,
              antecedencia: CFG_PADRAO.antecedencia, sabado: CFG_PADRAO.sabado };
   }
@@ -751,16 +782,22 @@ function enviarNotificacoes(d, id) {
   const linkPainel = appUrl + "?view=painel";
 
   const acao = temAgendamento
-    ? '<p style="color:#9BA89F;">A pessoa sugeriu três horários. Confirme um deles para criar o '
-      + 'evento no Google Calendar e avisar o candidato automaticamente:</p>'
-      + _botao("CONFIRMAR HORÁRIO", linkAprov)
+    ? _botao("CONFIRMAR HORÁRIO", linkAprov)
       + '<p style="text-align:center;color:#7E8C83;font-size:11.5px;max-width:330px;margin:0 auto;'
       + 'line-height:1.8;">Link pessoal e de uso único.<br>Não encaminhe para terceiros.</p>'
     : '<p style="color:#9BA89F;">Abra o painel para revisar o cadastro completo e aprová-lo.</p>';
 
+  // Os botões vêm ANTES dos dados: o Gmail recorta o fim de mensagens longas
+  // ou repetidas, e a ação não pode ficar escondida atrás dos "três pontinhos".
   const corpoAdmin = '<p style="font-size:17px;margin:0 0 6px 0;">Novo cadastro: '
     + '<b style="color:#E8B4BC;">' + d.nome + ' ' + d.sobrenome + '</b></p>'
-    + '<p style="color:#9BA89F;margin:0 0 20px 0;">' + d.categoriaLabel + ' · recebido em ' + agora + '</p>'
+    + '<p style="color:#9BA89F;margin:0 0 4px 0;">' + d.categoriaLabel + ' · recebido em ' + agora + '</p>'
+    + acao
+    + _botao("ACESSAR O PAINEL", linkPainel)
+    + '<p style="max-width:360px;margin:0 auto 8px auto;text-align:center;color:#7E8C83;'
+    + 'font-size:11.5px;line-height:1.8;">Informe o seu e-mail e receba um código<br>'
+    + 'de seis dígitos para entrar no painel.</p>'
+    + '<hr style="border:none;border-top:1px solid #1F3D30;margin:30px 0 22px 0;">'
     + '<div ' + caixa + '>'
     + _linha("ID", id)
     + _linha("Função", d.funcao_cob)
@@ -769,17 +806,11 @@ function enviarNotificacoes(d, id) {
     + _linha("WhatsApp", d.whatsapp)
     + _especificos('Informações fornecidas no cadastro')
     + horarios
-    + '</div>'
-    + acao
-    + '<hr style="border:none;border-top:1px solid #1F3D30;margin:32px 0 24px 0;">'
-    + '<p style="color:#9BA89F;text-align:center;">Painel administrativo do COB</p>'
-    + _botao("ACESSAR O PAINEL", linkPainel)
-    + '<p style="max-width:360px;margin:0 auto;text-align:center;color:#7E8C83;font-size:11.5px;'
-    + 'line-height:1.8;">Informe o seu e-mail e receba um código<br>de seis dígitos para entrar no painel.</p>';
+    + '</div>';
 
   MailApp.sendEmail({
     to: _destinatariosAdmin(),
-    subject: "COB · Novo cadastro (" + d.categoriaLabel + ") — " + d.nome + " " + d.sobrenome,
+    subject: "COB · Novo cadastro — " + d.nome + " " + d.sobrenome + " (ID " + id + ")",
     htmlBody: criarTemplateEmail("NOVO CADASTRO", corpoAdmin, { lgpd: false })
   });
 }
@@ -873,6 +904,27 @@ function getCandidatoById(id, categoria) {
 }
 
 // ============================================================
+// AGENDA — o que conta como horário ocupado
+// ============================================================
+/**
+ * Eventos de DIA INTEIRO não ocupam horário: são marcadores ("Save the Date",
+ * feriados, aniversários). Se contassem, um único marcador de vários dias
+ * bloquearia a agenda inteira. Convites recusados também não ocupam.
+ */
+function _bloqueiaHorario(ev, ignorarId) {
+  try {
+    if (ignorarId && ev.getId() === ignorarId) return false;
+    if (ev.isAllDayEvent()) return false;
+    if (ev.getMyStatus && ev.getMyStatus() === CalendarApp.GuestStatus.NO) return false;
+  } catch (e) { /* na dúvida, o evento ocupa */ }
+  return true;
+}
+
+function _eventosQueBloqueiam(cal, ini, fim, ignorarId) {
+  return cal.getEvents(ini, fim).filter(function (ev) { return _bloqueiaHorario(ev, ignorarId); });
+}
+
+// ============================================================
 // AGENDA — geração de horários
 // ============================================================
 function getAvailableTimes() {
@@ -888,7 +940,7 @@ function getAvailableTimes() {
 
     // Uma única leitura da agenda para toda a janela (antes: uma leitura por hora)
     const cal = CAL_();
-    const ocupados = cal.getEvents(hoje, fimJanela).map(function (ev) {
+    const ocupados = _eventosQueBloqueiam(cal, hoje, fimJanela, null).map(function (ev) {
       return { i: ev.getStartTime().getTime(), f: ev.getEndTime().getTime() };
     });
 
@@ -1066,6 +1118,9 @@ function verificarInstalacao() {
   r.push("INFO  · Horários disponíveis nos próximos dias: " + slots.length);
   if (slots.length) r.push("INFO  · Primeiro horário: " + slots[0].label);
   r.push("INFO  · Cota de e-mails restante hoje: " + MailApp.getRemainingDailyQuota());
+  const cfgA = _lerConfigAgenda();
+  r.push("INFO  · Janela de horários: " + cfgA.inicio + "h às " + cfgA.fim + "h, "
+         + cfgA.horizonte + " dias, " + cfgA.antecedencia + "h de antecedência");
   r.push("INFO  · Fuso do script: " + TZ_());
   try { r.push("INFO  · Agenda em uso: " + CAL_().getName() + " (" + CAL_().getId() + ")"); }
   catch (e) { r.push("FALHA · Agenda em uso → " + e); }
@@ -1121,25 +1176,107 @@ function _reconciliarAgenda(ss) {
       let ev = null;
       try { ev = cal.getEventById(eventId); } catch (e) { ev = null; }
 
+      const antes = String(dados[i][C.STATUS] || "").replace(/^CONFIRMADO:\s*/i, "").trim();
+      const ficha = {
+        id: dados[i][C.ID], nome: dados[i][C.NOME], sobrenome: dados[i][C.SOBRENOME],
+        email: dados[i][C.EMAIL], emailExtra: dados[i][C.EMAIL_EXTRA],
+        funcao: dados[i][C.FUNCAO], categoriaLabel: CATEGORIAS[key].label
+      };
+
       if (!ev) {
         aba.getRange(i + 1, C.STATUS + 1).setValue("PENDENTE");
         aba.getRange(i + 1, C.EVENT_ID + 1).setValue("");
         mudancas.push(dados[i][C.NOME] + ": evento apagado na agenda — voltou para pendente");
+        // Mudança veio da agenda, não do painel: avisa as duas partes assim mesmo.
+        _avisarMudanca(ficha, "CANCELADO", "", antes,
+          "O evento foi removido diretamente no Google Calendar.");
         continue;
       }
 
       const rotulo = _rotuloHorario(ev.getStartTime());
       if (String(dados[i][C.STATUS] || "") !== "CONFIRMADO: " + rotulo) {
         aba.getRange(i + 1, C.STATUS + 1).setValue("CONFIRMADO: " + rotulo);
+        aba.getRange(i + 1, C.LEMBRETES + 1).setValue("");   // lembretes recalculados
         mudancas.push(dados[i][C.NOME] + ": horário atualizado pela agenda para " + rotulo);
+        _avisarMudanca(ficha, "REMARCADO", rotulo, antes,
+          "A data foi alterada diretamente no Google Calendar.");
       }
     }
   });
   return mudancas;
 }
 
+/**
+ * Aviso de mudança de onboarding. Dispara SEMPRE dois e-mails:
+ * um para a pessoa inscrita e um para toda a administração do COB.
+ * Usada na remarcação, no cancelamento e quando a mudança vem da própria agenda.
+ */
+function _avisarMudanca(cand, tipo, rotuloNovo, rotuloAntigo, observacao) {
+  const caixa = 'style="background:#0F2A20;padding:24px;border-radius:8px;margin:24px 0;'
+              + 'border-left:4px solid #E8B4BC;text-align:left;"';
+  const cancelado = (tipo === "CANCELADO");
+  const titulo = cancelado ? "ONBOARDING CANCELADO" : "ONBOARDING REMARCADO";
+  const nome = String(cand.nome || "") + " " + String(cand.sobrenome || "");
+
+  const blocoData = cancelado
+    ? '<div ' + caixa + '><p style="margin:0;font-size:17px;font-family:Georgia,serif;">'
+      + '<b style="color:#E8B4BC;">Horário cancelado:</b> ' + (rotuloAntigo || "—") + '</p></div>'
+    : '<div ' + caixa + '>'
+      + '<p style="margin:0 0 8px 0;font-size:17px;font-family:Georgia,serif;">'
+      + '<b style="color:#E8B4BC;">Nova data e hora:</b> ' + rotuloNovo + '</p>'
+      + (rotuloAntigo ? '<p style="margin:0;color:#9BA89F;font-size:13.5px;">Antes: '
+                        + rotuloAntigo + '</p>' : '')
+      + '</div>';
+
+  // ---- pessoa inscrita ----
+  const corpoCand = '<p>Olá <b>' + cand.nome + '</b>,</p>'
+    + (cancelado
+        ? '<p>A sua sessão de onboarding com o COB foi cancelada.</p>'
+        : '<p>A sua sessão de onboarding com o COB foi remarcada.</p>')
+    + blocoData
+    + (observacao ? '<p style="color:#9BA89F;">' + observacao + '</p>' : '')
+    + (cancelado
+        ? '<p style="color:#9BA89F;">O evento saiu da sua agenda. Para remarcar, '
+          + 'basta responder a este e-mail.</p>'
+        : '<p style="color:#9BA89F;">O evento na sua agenda já foi atualizado. '
+          + 'Se este horário não servir, responda a este e-mail.</p>');
+
+  const para = [cand.email].concat(cand.emailExtra ? [cand.emailExtra] : []).join(",");
+  try {
+    MailApp.sendEmail({
+      to: para,
+      subject: (cancelado ? "Onboarding cancelado" : "Onboarding remarcado")
+               + " — COB (ID " + cand.id + ")",
+      htmlBody: criarTemplateEmail(titulo, corpoCand, { lgpd: true })
+    });
+  } catch (e) { Logger.log("Aviso ao candidato: " + e); }
+
+  // ---- administração ----
+  let linkPainel = "";
+  try { linkPainel = ScriptApp.getService().getUrl() + "?view=painel"; } catch (e) {}
+  const corpoAdmin = '<p style="font-size:17px;margin:0 0 6px 0;">'
+    + (cancelado ? 'Onboarding cancelado: ' : 'Onboarding remarcado: ')
+    + '<b style="color:#E8B4BC;">' + nome.trim() + '</b></p>'
+    + '<p style="color:#9BA89F;margin:0 0 4px 0;">' + (cand.categoriaLabel || "") + '</p>'
+    + (linkPainel ? _botao("ACESSAR O PAINEL", linkPainel) : "")
+    + '<hr style="border:none;border-top:1px solid #1F3D30;margin:28px 0 20px 0;">'
+    + blocoData
+    + _linha("E-mail", cand.email)
+    + _linha("Função", cand.funcao)
+    + (observacao ? _linha("Observação", observacao) : "");
+
+  try {
+    MailApp.sendEmail({
+      to: _destinatariosAdmin(),
+      subject: "COB · " + (cancelado ? "Onboarding cancelado" : "Onboarding remarcado")
+               + " — " + nome.trim() + " (ID " + cand.id + ")",
+      htmlBody: criarTemplateEmail(titulo, corpoAdmin, { lgpd: false })
+    });
+  } catch (e) { Logger.log("Aviso à administração: " + e); }
+}
+
 /** Reagenda um onboarding confirmado, movendo o MESMO evento do Calendar. */
-function reagendarOnboarding(sessao, id, categoria, novaDataHora, aviso) {
+function reagendarOnboarding(sessao, id, categoria, novaDataHora, aviso, forcar) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000);
@@ -1147,14 +1284,24 @@ function reagendarOnboarding(sessao, id, categoria, novaDataHora, aviso) {
 
     const cand = getCandidatoById(id, categoria);
     if (!cand) return { success: false, message: "Cadastro não encontrado." };
+    const rotuloAntigo = String(cand.opcoes || "").replace(/^CONFIRMADO:\s*/i, "").trim();
 
     const inicio = _parseISOLocal(novaDataHora);
     if (inicio.getTime() < Date.now()) return { success: false, message: "A nova data já passou." };
     const fim = new Date(inicio.getTime() + 3600000);
     const cal = CAL_();
 
-    const choque = cal.getEvents(inicio, fim).filter(function (e) { return e.getId() !== cand.eventId; });
-    if (choque.length) return { success: false, message: "Já existe compromisso nesse horário: " + choque[0].getTitle() };
+    const choque = _eventosQueBloqueiam(cal, inicio, fim, cand.eventId);
+    if (choque.length && !forcar) {
+      const q = choque[0];
+      return {
+        success: false,
+        conflito: true,
+        message: "Já existe compromisso nesse horário: \"" + q.getTitle() + "\" ("
+          + Utilities.formatDate(q.getStartTime(), TZ_(), "dd/MM HH:mm") + " às "
+          + Utilities.formatDate(q.getEndTime(), TZ_(), "HH:mm") + ")."
+      };
+    }
 
     const rotulo = _rotuloHorario(inicio);
     let ev = null;
@@ -1173,17 +1320,7 @@ function reagendarOnboarding(sessao, id, categoria, novaDataHora, aviso) {
     aba.getRange(cand.linha, C.EVENT_ID + 1).setValue(ev.getId());
     aba.getRange(cand.linha, C.LEMBRETES + 1).setValue("");
 
-    const caixa = 'style="background:#0F2A20;padding:24px;border-radius:8px;margin:24px 0;border-left:4px solid #E8B4BC;text-align:left;"';
-    const corpo = '<p>Olá <b>' + cand.nome + '</b>,</p>'
-      + '<p>A sua sessão de onboarding com o COB foi remarcada.</p>'
-      + '<div ' + caixa + '><p style="margin:0;font-size:17px;font-family:Georgia,serif;">'
-      + '<b style="color:#E8B4BC;">Nova data e hora:</b> ' + rotulo + '</p></div>'
-      + (aviso ? '<p style="color:#9BA89F;">' + aviso + '</p>' : '')
-      + '<p style="color:#9BA89F;">O evento na sua agenda já foi atualizado. '
-      + 'Se este horário não servir, responda a este e-mail.</p>';
-    const para = [cand.email].concat(cand.emailExtra ? [cand.emailExtra] : []).join(",");
-    MailApp.sendEmail({ to: para, subject: "Onboarding remarcado — COB",
-      htmlBody: criarTemplateEmail("ONBOARDING REMARCADO", corpo, { lgpd: true }) });
+    _avisarMudanca(cand, "REMARCADO", rotulo, rotuloAntigo, aviso);
 
     return { success: true, message: "Remarcado para " + rotulo };
   } catch (e) {
@@ -1199,6 +1336,7 @@ function cancelarOnboarding(sessao, id, categoria, motivo) {
     _exigirAdmin(sessao);
     const cand = getCandidatoById(id, categoria);
     if (!cand) return { success: false, message: "Cadastro não encontrado." };
+    const rotuloAntigo = String(cand.opcoes || "").replace(/^CONFIRMADO:\s*/i, "").trim();
 
     if (cand.eventId) {
       try { const ev = CAL_().getEventById(cand.eventId); if (ev) ev.deleteEvent(); }
@@ -1210,14 +1348,7 @@ function cancelarOnboarding(sessao, id, categoria, motivo) {
     aba.getRange(cand.linha, C.EVENT_ID + 1).setValue("");
     aba.getRange(cand.linha, C.LEMBRETES + 1).setValue("");
 
-    const corpo = '<p>Olá <b>' + cand.nome + '</b>,</p>'
-      + '<p>A sua sessão de onboarding com o COB foi cancelada e removida da sua agenda.</p>'
-      + (motivo ? '<p style="color:#9BA89F;">' + motivo + '</p>' : '')
-      + '<p style="color:#9BA89F;">A equipe entra em contato para combinar uma nova data. '
-      + 'O seu cadastro continua ativo.</p>';
-    const para = [cand.email].concat(cand.emailExtra ? [cand.emailExtra] : []).join(",");
-    MailApp.sendEmail({ to: para, subject: "Onboarding cancelado — COB",
-      htmlBody: criarTemplateEmail("ONBOARDING CANCELADO", corpo, { lgpd: true }) });
+    _avisarMudanca(cand, "CANCELADO", "", rotuloAntigo, motivo);
 
     return { success: true, message: "Onboarding cancelado." };
   } catch (e) {
@@ -1233,6 +1364,11 @@ function cancelarOnboarding(sessao, id, categoria, motivo) {
  * Este envio é próprio e alcança todo mundo. Rodar por gatilho de hora em hora.
  */
 function enviarLembretes() {
+  // Antes dos lembretes, sincroniza com a agenda: alterações feitas direto no
+  // Google Calendar disparam os avisos mesmo que ninguém abra o painel.
+  try { _reconciliarAgenda(SpreadsheetApp.openById(SS_ID_())); }
+  catch (e) { Logger.log("Reconciliação no gatilho: " + e); }
+
   const ss = SpreadsheetApp.openById(SS_ID_());
   const agora = Date.now();
   let enviados = 0;
@@ -1415,6 +1551,170 @@ function diagnosticarPainel() {
   const txt = r.join("\n");
   Logger.log(txt);
   return txt;
+}
+
+/**
+ * Confere se cada arquivo HTML tem mesmo conteúdo HTML.
+ * Rode isto quando a página der "Malformed HTML content": o erro significa que
+ * algum arquivo .html recebeu, por engano, o conteúdo do Code.gs.
+ */
+function conferirArquivos() {
+  // Procura uma marca que só existe no arquivo certo. Mais confiável do que
+  // comparar o começo do texto, que muda a cada reorganização.
+  const marcas = {
+    "index":      "<!DOCTYPE",
+    "Estilo":     "<style>",
+    "Formulario": 'id="route-form"',
+    "Painel":     'id="route-dashboard"',
+    "Textos":     "var I18N",
+    "Script":     "function showStep"
+  };
+  const r = ["CONFERÊNCIA DOS ARQUIVOS HTML", ""];
+  let problemas = 0;
+
+  Object.keys(marcas).forEach(function (nome) {
+    try {
+      const c = HtmlService.createHtmlOutputFromFile(nome).getContent();
+      const pareceBackend = c.indexOf("function doGet(") >= 0 || c.indexOf("SpreadsheetApp.openById") >= 0;
+      if (pareceBackend) {
+        problemas++;
+        r.push("ERRADO· " + nome + ".html contém o código do Code.gs.");
+        r.push("        Cole nele o conteúdo correto de " + nome + ".html.");
+      } else if (c.indexOf(marcas[nome]) < 0) {
+        problemas++;
+        r.push("ERRADO· " + nome + ".html não tem a marca esperada (" + marcas[nome] + ").");
+        r.push("        Tamanho: " + c.length + " caracteres.");
+      } else {
+        r.push("OK    · " + nome + ".html — " + c.length + " caracteres");
+      }
+    } catch (e) {
+      problemas++;
+      r.push("FALHA · " + nome + ".html não pôde ser lido como HTML.");
+      r.push("        Quase certamente recebeu o conteúdo do Code.gs por engano.");
+    }
+  });
+
+  r.push("");
+  r.push(problemas === 0 ? "Todos os arquivos estão corretos."
+                         : problemas + " arquivo(s) para corrigir.");
+  const txt = r.join("\n");
+  Logger.log(txt);
+  return txt;
+}
+
+/**
+ * Registro de interesse de grupos fora do escopo atual do COB.
+ * Não é uma recusa: é uma lista para quando o escopo do projeto mudar,
+ * e ao mesmo tempo um levantamento de quem procura a rede hoje.
+ */
+function registrarInteresse(payload) {
+  try {
+    garantirAbasBase();
+    payload = payload || {};
+    const email = String(payload.email || "").toLowerCase().trim();
+    const nome  = formatarNome(String(payload.nome || "").trim());
+    if (!nome) return { success: false, message: "Informe o seu nome." };
+    if (!_emailValido(email)) return { success: false, message: "E-mail inválido." };
+
+    const ss = SpreadsheetApp.openById(SS_ID_());
+    const aba = ss.getSheetByName("Interesse_Futuro");
+    aba.appendRow([
+      new Date(), nome, email,
+      String(payload.grupo || ""), String(payload.formato || ""),
+      String(payload.cidade || ""), String(payload.mensagem || "")
+    ]);
+
+    // Resposta cordial a quem deixou o contato
+    const corpo = '<p>Olá <b>' + nome + '</b>,</p>'
+      + '<p>Registramos o seu interesse no Conectando Orquestras Brasileiras. '
+      + 'Neste momento o projeto trabalha com um recorte específico de perfis, mas guardamos '
+      + 'o seu contato: se o escopo for ampliado, avisamos você.</p>'
+      + '<div style="background:#0F2A20;padding:24px;border-radius:8px;margin:24px 0;'
+      + 'border-left:4px solid #E8B4BC;text-align:left;">'
+      + _linha("Grupo", payload.grupo) + _linha("Formato", payload.formato)
+      + _linha("Cidade / UF", payload.cidade) + '</div>'
+      + '<p style="color:#9BA89F;">Obrigado por procurar o COB. O seu registro também nos ajuda '
+      + 'a dimensionar a demanda por uma rede mais ampla no futuro.</p>';
+    try {
+      MailApp.sendEmail({ to: email, subject: "Interesse registrado — COB",
+        htmlBody: criarTemplateEmail("INTERESSE REGISTRADO", corpo, { lgpd: true }) });
+    } catch (e) { Logger.log("E-mail de interesse: " + e); }
+
+    try {
+      const corpoAdmin = '<p style="font-size:17px;margin:0 0 6px 0;">Interesse registrado: '
+        + '<b style="color:#E8B4BC;">' + nome + '</b></p>'
+        + '<p style="color:#9BA89F;margin:0 0 20px 0;">Grupo fora do escopo atual do COB.</p>'
+        + '<div style="background:#0F2A20;padding:24px;border-radius:8px;margin:24px 0;'
+        + 'border-left:4px solid #E8B4BC;text-align:left;">'
+        + _linha("E-mail", email) + _linha("Grupo", payload.grupo)
+        + _linha("Formato", payload.formato) + _linha("Cidade / UF", payload.cidade)
+        + _linha("Mensagem", payload.mensagem) + '</div>';
+      MailApp.sendEmail({ to: _destinatariosAdmin(),
+        subject: "COB · Interesse fora do escopo — " + nome,
+        htmlBody: criarTemplateEmail("INTERESSE REGISTRADO", corpoAdmin, { lgpd: false }) });
+    } catch (e) { Logger.log("Aviso de interesse: " + e); }
+
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: String(e.message || e) };
+  }
+}
+
+/**
+ * Prova de qual agenda os horários estão sendo lidos.
+ * Lista a agenda em uso e os compromissos que estão bloqueando horários.
+ */
+function provarAgenda() {
+  const cal = CAL_();
+  const tz = TZ_();
+  const r = [];
+  r.push("Agenda em uso");
+  r.push("  Nome ....: " + cal.getName());
+  r.push("  ID ......: " + cal.getId());
+  r.push("  Fuso ....: " + cal.getTimeZone());
+  r.push("  É a agenda padrão desta conta? "
+         + (cal.getId() === CalendarApp.getDefaultCalendar().getId() ? "SIM" : "NÃO"));
+  r.push("");
+
+  const cfg = _lerConfigAgenda();
+  const hoje = new Date();
+  const ini = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  const fim = new Date(ini.getTime() + 14 * 86400000);
+  const eventos = cal.getEvents(ini, fim);
+
+  r.push("Compromissos nos próximos 14 dias nesta agenda: " + eventos.length);
+  eventos.slice(0, 25).forEach(function (ev) {
+    r.push("  " + Utilities.formatDate(ev.getStartTime(), tz, "dd/MM HH:mm")
+           + " – " + Utilities.formatDate(ev.getEndTime(), tz, "HH:mm")
+           + "  " + ev.getTitle());
+  });
+  r.push("");
+  r.push("Estes são os compromissos que removem horários da lista oferecida.");
+  r.push("Confira-os no Google Agenda de " + cal.getId() + ": se baterem, a origem está certa.");
+  r.push("");
+  r.push("Janela configurada: " + cfg.inicio + "h às " + cfg.fim + "h, "
+         + cfg.horizonte + " dias, " + cfg.antecedencia + "h de antecedência.");
+  r.push("Horários livres agora: " + getAvailableTimes().length);
+
+  const txt = r.join("\n");
+  Logger.log(txt);
+  return txt;
+}
+
+/**
+ * Dispara os DOIS e-mails de remarcação para o próprio administrador,
+ * sem tocar em nenhum cadastro. Serve para conferir entrega e diagramação.
+ */
+function TESTE_email_remarcacao() {
+  _avisarMudanca({
+    id: "TESTE01", nome: "Fulana", sobrenome: "de Teste",
+    email: ADMIN_EMAIL_(), emailExtra: "",
+    funcao: "GT Gestão e Comunicação", categoriaLabel: "Voluntário(a)"
+  }, "REMARCADO", "04/09/2026 (Sex) às 15:00", "01/09/2026 (Ter) às 13:00",
+     "Disparo de teste — nenhum cadastro foi alterado.");
+  return "Dois e-mails de remarcação enviados:\n"
+       + "  1) pessoa inscrita → " + ADMIN_EMAIL_() + "\n"
+       + "  2) administração  → " + _destinatariosAdmin();
 }
 
 /** Envia um e-mail de teste para o admin — confirma que a entrega funciona. */
