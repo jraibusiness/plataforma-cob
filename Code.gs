@@ -485,3 +485,30 @@ function getOrCreateSubfolder(p, n) {
   let f = p.getFoldersByName(n);
   return f.hasNext() ? f.next() : p.createFolder(n);
 }
+
+// ============================================================
+// "SEJA UM AMIGO DO COB" — Integração Asaas (preparada, inerte)
+// ------------------------------------------------------------
+// Blindada: NÃO processa pagamentos até que a conta institucional
+// oficial do COB seja criada e a chave seja cadastrada em
+// Configurações do Projeto › Propriedades do Script:
+//   Propriedade: ASAAS_API_KEY   Valor: <chave de produção>
+// Enquanto a chave não existir, retorna status "nao_configurado"
+// e o front-end exibe o Pix institucional como alternativa.
+// ============================================================
+function criarCobrancaAsaas(dados) {
+  try {
+    const apiKey = PropertiesService.getScriptProperties().getProperty("ASAAS_API_KEY");
+    if (!apiKey) {
+      return { success: false, status: "nao_configurado",
+        message: "A conta oficial do COB ainda não foi configurada. Use a chave Pix institucional por enquanto." };
+    }
+    // Quando a chave existir, implementar aqui a chamada à API do Asaas
+    // (cliente + cobrança recorrente/avulsa) usando UrlFetchApp e o endpoint
+    // de produção. Mantido como ponto único de integração.
+    return { success: false, status: "pendente_implementacao",
+      message: "Chave detectada. Falta habilitar a rotina de cobrança no backend." };
+  } catch (e) {
+    return { success: false, status: "erro", message: e.toString() };
+  }
+}

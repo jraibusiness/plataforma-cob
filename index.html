@@ -6,30 +6,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 /* ============================================================
-   PALETA — Verde Escuro + Rosa Claro (Dark mode sofisticado)
+   PALETA CANÔNICA COB — Grafite + Verde institucional + Prata/Dourado/Rosa
+   (ver BRAND_KIT.md)
    ============================================================ */
 :root {
-  --bg:        #0A1812;
-  --bg-2:      #0F2A20;
-  --card:      #122620;
-  --card-2:    #163A2C;
-  --green:     #1B4332;
-  --green-mid: #2D5A4A;
-  --pink:      #E8B4BC;
-  --pink-soft: #F4D4D8;
-  --pink-deep: #D49AA3;
-  --text:      #F5EFE6;
-  --text-mute: #9BA89F;
-  --border:    #1F3D30;
-  --border-2:  #2A4A3A;
+  --bg:        #0F0F0F;
+  --bg-2:      #1A1A1A;
+  --card:      #242424;
+  --card-2:    #2E2E2E;
+  --green:     #2D5A3D;
+  --green-mid: #357A4F;
+  --green-hover:#1E3F2A;
+  --silver:    #C0C0C0;
+  --silver-2:  #E0E0E0;
+  --gold:      #B8860B;
+  --pink:      #E8A2BA;
+  --pink-soft: #F2C9D6;
+  --pink-deep: #D4869C;
+  --text:      #F5F5F5;
+  --text-mute: #A8A8A8;
+  --border:    rgba(192,192,192,0.14);
+  --border-2:  rgba(192,192,192,0.28);
   --danger:    #E8736A;
   --success:   #88C9A1;
   --warning:   #E8C36A;
 
+  --font-brand: 'Cinzel', Georgia, serif;
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
@@ -670,6 +676,9 @@ body {
 .btn-ghost:hover { background: rgba(232,180,188,0.08); }
 .btn-block { width: 100%; }
 
+/* CTA fixo só existe no mobile; escondido por padrão (desktop usa .form-cta) */
+.form-cta-sticky { display: none; }
+
 @media (max-width: 720px) {
   .form-cta-sticky {
     position: fixed;
@@ -678,7 +687,7 @@ body {
     right: 0;
     padding: 14px 16px;
     padding-bottom: max(14px, env(safe-area-inset-bottom));
-    background: rgba(10, 24, 18, 0.95);
+    background: rgba(15, 15, 15, 0.96);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-top: 1px solid var(--border);
@@ -1096,9 +1105,148 @@ body {
   .hero { padding: 24px 0 16px 0; }
   .login-card { margin: 4vh auto; padding: 30px 22px; }
 }
+
+/* ============================================================
+   LANDING PAGE INSTITUCIONAL (route-home) — Brand Kit COB
+   ============================================================ */
+.btn-silver, .btn-outline-s {
+  display: inline-block; cursor: pointer; font-family: var(--font-brand);
+  text-transform: uppercase; letter-spacing: 1.2px; font-size: 0.82rem; font-weight: 600;
+  padding: 14px 28px; border-radius: var(--radius-pill); text-decoration: none;
+  transition: transform .25s ease, box-shadow .25s ease, background .25s ease, color .25s ease;
+  min-height: var(--tap); line-height: 1.2; display: inline-flex; align-items: center; justify-content: center;
+}
+.btn-silver { background: linear-gradient(135deg, var(--silver) 0%, var(--silver-2) 100%); color: #0F0F0F; border: 1px solid transparent; box-shadow: 0 4px 18px rgba(192,192,192,0.18); }
+.btn-silver:hover { transform: translateY(-3px); box-shadow: 0 10px 26px rgba(192,192,192,0.3); filter: brightness(1.04); }
+.btn-outline-s { background: transparent; color: var(--silver-2); border: 1px solid var(--border-2); }
+.btn-outline-s:hover { transform: translateY(-3px); border-color: var(--silver); color: #fff; box-shadow: 0 8px 22px rgba(0,0,0,0.35); }
+
+.lp-hero { position: relative; overflow: hidden; padding: 112px 0 84px; text-align: center;
+  background: radial-gradient(120% 90% at 50% -10%, #17301f 0%, var(--bg) 60%); }
+.lp-hero-glow { position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(40% 50% at 20% 20%, rgba(192,192,192,0.06), transparent 70%),
+    radial-gradient(40% 50% at 85% 80%, rgba(45,90,61,0.22), transparent 70%); }
+.lp-hero-inner { position: relative; z-index: 1; }
+.lp-hero-brasao { width: 108px; height: 108px; margin: 0 auto 22px; display: block; filter: drop-shadow(0 0 22px rgba(192,192,192,0.25)); }
+.lp-hero-eyebrow { font-family: var(--font-brand); text-transform: uppercase; letter-spacing: 4px;
+  font-size: 0.72rem; color: var(--silver); opacity: 0.9; margin-bottom: 18px; }
+.lp-hero-title { font-family: var(--font-display); font-weight: 600; color: var(--text);
+  font-size: clamp(2.1rem, 6vw, 3.6rem); line-height: 1.08; margin: 0 auto 18px; max-width: 16ch; }
+.lp-hero-sub { color: var(--text-mute); max-width: 56ch; margin: 0 auto 32px; font-size: 1.08rem; line-height: 1.7; }
+.lp-hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+.lp-section { padding: 80px 0; scroll-margin-top: 76px; }
+.lp-section.lp-alt { background: var(--bg-2); }
+.lp-narrow { max-width: 820px; }
+.lp-title { font-family: var(--font-brand); text-transform: uppercase; letter-spacing: 2px;
+  text-align: center; color: var(--silver); font-size: clamp(1.4rem, 3.5vw, 2.1rem); font-weight: 700; margin: 0 0 14px; }
+.lp-divider { width: 64px; height: 3px; margin: 0 auto 34px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--silver), var(--gold)); box-shadow: 0 0 12px rgba(192,192,192,0.35); }
+.lp-section-sub { text-align: center; color: var(--text-mute); max-width: 60ch; margin: -18px auto 34px; font-size: 1.05rem; }
+
+.lp-about { display: grid; grid-template-columns: 1.3fr 1fr; gap: 48px; align-items: center; }
+.lp-about-text p { color: var(--text-mute); font-size: 1.06rem; line-height: 1.85; margin: 0 0 16px; }
+.lp-about-art svg { width: 100%; max-width: 260px; margin: 0 auto; display: block; filter: drop-shadow(0 0 24px rgba(45,90,61,0.4)); }
+
+.lp-video-wrap { position: relative; padding-bottom: 56.25%; height: 0; border-radius: var(--radius-l); overflow: hidden;
+  border: 1px solid var(--border); box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.lp-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.lp-mvv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.lp-mvv-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-l);
+  padding: 34px 26px; text-align: center; transition: transform .25s, border-color .25s, box-shadow .25s; }
+.lp-mvv-card:hover { transform: translateY(-5px); border-color: var(--border-2); box-shadow: 0 16px 40px rgba(0,0,0,0.4); }
+.lp-mvv-icon { font-size: 2rem; color: var(--gold); margin-bottom: 12px; }
+.lp-mvv-card h3 { font-family: var(--font-brand); text-transform: uppercase; letter-spacing: 1.5px; color: var(--silver-2); font-size: 1rem; margin: 0 0 12px; }
+.lp-mvv-card p { color: var(--text-mute); line-height: 1.7; font-size: 0.98rem; margin: 0; }
+
+.lp-benefits { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+.lp-benefit { background: var(--card); border-left: 3px solid var(--green-mid); border-radius: var(--radius-m);
+  padding: 22px 22px; transition: transform .25s, box-shadow .25s; }
+.lp-benefit:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.4); border-left-color: var(--silver); }
+.lp-benefit h4 { font-family: var(--font-brand); text-transform: uppercase; letter-spacing: 1px; color: var(--silver-2); font-size: 0.9rem; margin: 0 0 8px; }
+.lp-benefit p { color: var(--text-mute); font-size: 0.96rem; line-height: 1.6; margin: 0; }
+
+.lp-ods-badge { text-align: center; margin: -14px 0 24px; }
+.lp-ods-badge span { display: inline-block; font-family: var(--font-brand); letter-spacing: 1.5px; text-transform: uppercase;
+  font-size: 0.74rem; color: var(--gold); border: 1px solid var(--gold); border-radius: var(--radius-pill); padding: 7px 18px; }
+#lp-agenda p { color: var(--text-mute); line-height: 1.85; margin: 0 0 16px; text-align: left; }
+.lp-source a { color: var(--silver); text-decoration: none; font-size: 0.92rem; }
+.lp-source a:hover { color: var(--silver-2); }
+
+.lp-plans { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; align-items: stretch; }
+.lp-plan { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-l);
+  padding: 30px 22px; display: flex; flex-direction: column; text-align: center; transition: transform .25s, box-shadow .25s, border-color .25s; }
+.lp-plan:hover { transform: translateY(-5px); box-shadow: 0 16px 40px rgba(0,0,0,0.45); }
+.lp-plan-feat { border-color: var(--pink); background: linear-gradient(170deg, rgba(232,162,186,0.08), var(--card) 60%); }
+.lp-plan-tag { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+  background: var(--pink); color: #2a0f17; font-family: var(--font-brand); font-size: 0.64rem; letter-spacing: 1.2px; text-transform: uppercase;
+  padding: 5px 14px; border-radius: var(--radius-pill); font-weight: 700; }
+.lp-plan-name { font-family: var(--font-brand); text-transform: uppercase; letter-spacing: 1px; color: var(--silver-2); font-size: 0.92rem; margin-bottom: 12px; }
+.lp-plan-price { font-family: var(--font-display); font-size: 2.2rem; color: var(--text); font-weight: 600; line-height: 1; margin-bottom: 4px; }
+.lp-plan-price span { font-family: var(--font-body); font-size: 0.9rem; color: var(--text-mute); font-weight: 400; }
+.lp-plan-price-free { font-size: 1.5rem; }
+.lp-plan-desc { color: var(--text-mute); font-size: 0.9rem; line-height: 1.6; margin: 14px 0 20px; flex: 1; }
+.lp-plan-btn { width: 100%; }
+.lp-friend-note { text-align: center; color: var(--text-mute); font-size: 0.82rem; max-width: 60ch; margin: 28px auto 0; opacity: 0.8; }
+
+.lp-res-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.lp-res-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-l); padding: 34px 28px; text-align: center; }
+.lp-res-icon { font-size: 2.2rem; margin-bottom: 12px; }
+.lp-res-card h3 { font-family: var(--font-brand); text-transform: uppercase; letter-spacing: 1.2px; color: var(--silver-2); font-size: 1rem; margin: 0 0 10px; }
+.lp-res-card p { color: var(--text-mute); line-height: 1.6; margin: 0 0 20px; font-size: 0.96rem; }
+
+.lp-footer { background: #0A0A0A; border-top: 1px solid var(--border); padding: 54px 0 24px; }
+.lp-footer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.lp-footer-brand { font-family: var(--font-brand); font-size: 1.8rem; font-weight: 700; letter-spacing: 3px; color: var(--silver); }
+.lp-footer-tag { color: var(--text-mute); font-family: var(--font-display); font-size: 1.1rem; margin: 6px 0 0; }
+.lp-footer h4 { font-family: var(--font-brand); text-transform: uppercase; letter-spacing: 1.2px; color: var(--silver-2); font-size: 0.82rem; margin: 0 0 12px; }
+.lp-footer a { color: var(--text-mute); text-decoration: none; }
+.lp-footer a:hover { color: var(--silver-2); }
+.lp-social { display: flex; gap: 14px; }
+.lp-social a { color: var(--silver); display: inline-flex; transition: transform .2s, color .2s; }
+.lp-social a:hover { transform: translateY(-2px); color: #fff; }
+.lp-footer-bottom { max-width: 1200px; margin: 36px auto 0; padding: 18px 20px 0; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; color: var(--text-mute); font-size: 0.8rem; }
+
+/* Links institucionais no topo (somente desktop, somente no route-home) */
+.lp-nav-links { display: flex; gap: 22px; align-items: center; }
+.lp-nav-links a { color: var(--text-mute); text-decoration: none; font-size: 0.86rem; cursor: pointer; transition: color .2s; white-space: nowrap; }
+.lp-nav-links a:hover { color: var(--silver-2); }
+
+@media (max-width: 920px) {
+  .lp-about { grid-template-columns: 1fr; gap: 28px; }
+  .lp-about-art { order: -1; }
+  .lp-mvv-grid { grid-template-columns: 1fr; }
+  .lp-plans { grid-template-columns: repeat(2, 1fr); }
+  .lp-nav-links { display: none; }
+}
+@media (max-width: 560px) {
+  .lp-section { padding: 52px 0; }
+  .lp-plans { grid-template-columns: 1fr; }
+  .lp-res-grid { grid-template-columns: 1fr; }
+  .lp-footer-grid { grid-template-columns: 1fr; gap: 22px; }
+  .lp-hero { padding: 92px 0 60px; }
+}
 </style>
 </head>
 <body>
+
+<script>
+// Definido cedo: o onerror de um logo pode disparar antes do script principal.
+function cobLogoFallback(img, size) {
+  var s = size || 120;
+  var span = document.createElement('span');
+  span.innerHTML = '<svg viewBox="0 0 120 120" width="' + s + '" height="' + s + '" xmlns="http://www.w3.org/2000/svg" aria-label="COB">'
+    + '<circle cx="60" cy="60" r="54" fill="none" stroke="#C0C0C0" stroke-width="1.2"/>'
+    + '<circle cx="60" cy="60" r="46" fill="none" stroke="#C0C0C0" stroke-width="0.6" opacity="0.5"/>'
+    + '<text x="60" y="70" font-family="Cinzel, serif" font-size="26" font-weight="700" text-anchor="middle" fill="#C0C0C0" letter-spacing="4">COB</text></svg>';
+  var svg = span.firstChild;
+  if (img.className) svg.setAttribute('class', img.className);
+  if (img.parentNode) img.replaceWith(svg);
+}
+</script>
 
 <!-- ============================================================
      TOP NAV — sempre visível
@@ -1109,15 +1257,21 @@ body {
       <button class="hamburger" id="hamburger" onclick="toggleSidebar()" style="display:none;">☰</button>
       <a class="brand" onclick="navigate('home')">
         <svg class="brand-logo" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="30" cy="30" r="27" fill="none" stroke="#E8B4BC" stroke-width="1"/>
-          <circle cx="30" cy="30" r="23" fill="none" stroke="#E8B4BC" stroke-width="0.5" opacity="0.5"/>
-          <text x="30" y="36" font-family="Cormorant Garamond, serif" font-size="13" font-weight="700" text-anchor="middle" fill="#E8B4BC" letter-spacing="2.5">COB</text>
+          <circle cx="30" cy="30" r="27" fill="none" stroke="#C0C0C0" stroke-width="1"/>
+          <circle cx="30" cy="30" r="23" fill="none" stroke="#C0C0C0" stroke-width="0.5" opacity="0.5"/>
+          <text x="30" y="36" font-family="Cinzel, serif" font-size="12" font-weight="700" text-anchor="middle" fill="#C0C0C0" letter-spacing="2">COB</text>
         </svg>
         <div class="brand-text">
           <span class="brand-name">COB</span>
           <span class="brand-sub" data-i18n="nav_sub">Conectando Orquestras Brasileiras</span>
         </div>
       </a>
+    </div>
+    <div class="lp-nav-links" id="lpNavLinks">
+      <a onclick="lpScroll('lp-sobre')" data-i18n="lp_nav_about">Sobre</a>
+      <a onclick="lpScroll('lp-beneficios')" data-i18n="lp_nav_benefits">Benefícios</a>
+      <a onclick="lpScroll('lp-cadastro')" data-i18n="lp_nav_join">Cadastro</a>
+      <a onclick="lpScroll('lp-apoie')" data-i18n="lp_nav_support">Apoie</a>
     </div>
     <div class="nav-actions">
       <div class="lang-switcher">
@@ -1131,6 +1285,21 @@ body {
 </nav>
 
 <div id="toast"></div>
+
+<!-- Modal "Seja um Amigo do COB" (apoio / Pix) -->
+<div id="apoioModal" class="modal-overlay" onclick="if(event.target===this)fecharApoio()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="fecharApoio()">×</button>
+    <h3 style="font-family:'Cinzel',serif;color:var(--pink);letter-spacing:1px;margin:0 0 6px 0;text-transform:uppercase;font-size:1.05rem;" data-i18n="lp_friend_title">Seja um Amigo do COB</h3>
+    <p id="apoioPlano" style="color:var(--silver-2);font-weight:600;margin:0 0 16px;"></p>
+    <p style="color:var(--text-mute);font-size:0.9rem;margin:0 0 10px;" data-i18n="apoio_pix_label">Chave Pix (e-mail) do COB:</p>
+    <div style="display:flex;gap:8px;align-items:center;background:#181818;border:1px solid var(--border);border-radius:var(--radius-s);padding:12px 14px;">
+      <code id="apoioPix" style="color:var(--text);font-size:0.9rem;word-break:break-all;flex:1;">orquestrasbrasileiras@gmail.com</code>
+      <button class="action-btn" onclick="copiarPix(this)" data-i18n="apoio_copy">COPIAR</button>
+    </div>
+    <p style="color:var(--text-mute);font-size:0.8rem;margin:16px 0 0;line-height:1.6;" data-i18n="apoio_note">Assim que a conta institucional oficial for configurada, o pagamento recorrente automático (cartão/Pix) ficará disponível aqui mesmo.</p>
+  </div>
+</div>
 
 <!-- Modal de detalhes do candidato (painel admin) -->
 <div id="detalhesModal" class="modal-overlay" onclick="if(event.target===this)fecharDetalhes()">
@@ -1177,38 +1346,220 @@ function confirmar(id, time, cat) {
      ROUTE: HOME
      ============================================================ -->
 <section class="route active" id="route-home">
-  <div class="container">
-    <div class="hero">
-      <div class="hero-eyebrow" data-i18n="hero_eyebrow">A ARTE DE UNIR PELA MÚSICA</div>
-      <h1><span data-i18n="hero_t1">Plataforma</span> <em data-i18n="hero_t2">COB</em></h1>
-      <p data-i18n="hero_p">Bem-vindo(a) ao Conectando Orquestras Brasileiras — uma rede colaborativa dedicada a fortalecer a gestão e o intercâmbio entre grupos sinfônicos do país.</p>
-    </div>
 
-    <h2 class="section-title" data-i18n="home_choose">Como você gostaria de se conectar?</h2>
-    <p class="section-sub" data-i18n="home_choose_sub">Escolha a categoria que melhor representa o seu interesse.</p>
-
-    <div class="category-grid">
-      <div class="category-card" onclick="startCategory('embaixador')">
-        <div class="cat-icon">★</div>
-        <div class="cat-title" data-i18n="cat_emb_title">Embaixador(a)</div>
-        <div class="cat-desc" data-i18n="cat_emb_desc">Represente o COB e ajude a expandir nossa rede em sua região, conectando pessoas e instituições.</div>
-        <div class="cat-arrow" data-i18n="cat_start">Iniciar →</div>
-      </div>
-      <div class="category-card" onclick="startCategory('representante')">
-        <div class="cat-icon">♪</div>
-        <div class="cat-title" data-i18n="cat_rep_title">Representante de Orquestra</div>
-        <div class="cat-desc" data-i18n="cat_rep_desc">Cadastre sua orquestra na rede e participe de iniciativas colaborativas de gestão e formação.</div>
-        <div class="cat-arrow" data-i18n="cat_start">Iniciar →</div>
-      </div>
-      <div class="category-card" onclick="startCategory('voluntario')">
-        <div class="cat-icon">♥</div>
-        <div class="cat-title" data-i18n="cat_vol_title">Voluntário(a)</div>
-        <div class="cat-desc" data-i18n="cat_vol_desc">Some seu talento ao trabalho dos GTs do COB. Há frentes para diversos perfis profissionais.</div>
-        <div class="cat-arrow" data-i18n="cat_start">Iniciar →</div>
+  <!-- HERO -->
+  <div class="lp-hero">
+    <div class="lp-hero-glow"></div>
+    <div class="container lp-hero-inner">
+      <img class="lp-hero-brasao" src="https://lh3.googleusercontent.com/d/12LKSF1WmzOq2V5jHP_-hfD4IS42iwJzk=w240" alt="COB — Conectando Orquestras Brasileiras" onerror="cobLogoFallback(this,120)">
+      <div class="lp-hero-eyebrow" data-i18n="hero_eyebrow">A ARTE DE UNIR PELA MÚSICA</div>
+      <h1 class="lp-hero-title" data-i18n="lp_hero_title">Conectando Orquestras Brasileiras</h1>
+      <p class="lp-hero-sub" data-i18n="lp_hero_sub">Uma rede colaborativa dedicada a fortalecer a gestão e o intercâmbio entre os grupos sinfônicos de todo o país.</p>
+      <div class="lp-hero-cta">
+        <a class="btn-silver" onclick="lpScroll('lp-sobre')" data-i18n="lp_cta_know">Conheça o COB</a>
+        <a class="btn-outline-s" onclick="lpScroll('lp-cadastro')" data-i18n="lp_cta_join">Faça parte →</a>
       </div>
     </div>
-
   </div>
+
+  <!-- SOBRE -->
+  <section class="lp-section" id="lp-sobre">
+    <div class="container">
+      <h2 class="lp-title" data-i18n="lp_about_title">Sobre o COB</h2>
+      <div class="lp-divider"></div>
+      <div class="lp-about">
+        <div class="lp-about-text">
+          <p data-i18n="lp_about_p1">O COB é uma iniciativa dedicada a fomentar a colaboração entre orquestras de todo o país, visando estabelecer uma rede colaborativa.</p>
+          <p data-i18n="lp_about_p2">Nosso propósito é facilitar o intercâmbio de conhecimentos, materiais e técnicas relacionadas à gestão de grupos sinfônicos, promovendo uma administração mais coesa e eficaz.</p>
+          <p data-i18n="lp_about_p3">Por meio dessa parceria, o COB busca desenvolver, em conjunto com as orquestras, ferramentas e estratégias que contribuam para uma gestão mais eficiente e sustentável dessas instituições.</p>
+        </div>
+        <div class="lp-about-art">
+          <img src="https://lh3.googleusercontent.com/d/12LKSF1WmzOq2V5jHP_-hfD4IS42iwJzk=w320" alt="COB" style="width:100%;max-width:260px;display:block;margin:0 auto;" onerror="cobLogoFallback(this,200)">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VÍDEO INSTITUCIONAL -->
+  <section class="lp-section lp-alt" id="lp-video">
+    <div class="container">
+      <h2 class="lp-title" data-i18n="lp_video_title">Vídeo Institucional</h2>
+      <div class="lp-divider"></div>
+      <div class="lp-video-wrap">
+        <iframe src="https://drive.google.com/file/d/1eFuRIld6GHdI3TXUkB6TI8oz8nc8H2-N/preview" allow="autoplay" allowfullscreen loading="lazy" title="Vídeo Institucional COB"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- MISSÃO / VISÃO / VALORES -->
+  <section class="lp-section" id="lp-valores">
+    <div class="container">
+      <h2 class="lp-title" data-i18n="lp_mvv_title">Missão, Visão e Valores</h2>
+      <div class="lp-divider"></div>
+      <div class="lp-mvv-grid">
+        <div class="lp-mvv-card">
+          <div class="lp-mvv-icon">◈</div>
+          <h3 data-i18n="lp_mission">Missão</h3>
+          <p data-i18n="lp_mission_p">Promover a interlocução entre orquestras brasileiras para fortalecer o cenário musical nacional por meio da colaboração e do intercâmbio cultural.</p>
+        </div>
+        <div class="lp-mvv-card">
+          <div class="lp-mvv-icon">◇</div>
+          <h3 data-i18n="lp_vision">Visão</h3>
+          <p data-i18n="lp_vision_p">Ser reconhecido por cooperar com a inovação das práticas de gestão dos grupos sinfônicos brasileiros.</p>
+        </div>
+        <div class="lp-mvv-card">
+          <div class="lp-mvv-icon">❖</div>
+          <h3 data-i18n="lp_values">Valores</h3>
+          <p data-i18n="lp_values_p">Colaboração, diálogo permanente, articulação cultural, compromisso social e conhecimento.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BENEFÍCIOS -->
+  <section class="lp-section lp-alt" id="lp-beneficios">
+    <div class="container">
+      <h2 class="lp-title" data-i18n="lp_benefits_title">Benefícios da Rede COB</h2>
+      <div class="lp-divider"></div>
+      <p class="lp-section-sub" data-i18n="lp_benefits_sub">Ao integrar o COB, seu grupo passa a contar com:</p>
+      <div class="lp-benefits">
+        <div class="lp-benefit"><h4 data-i18n="lp_benefit1_t">Maior visibilidade</h4><p data-i18n="lp_benefit1_p">Ampliação de alcance através das nossas redes sociais e eventos.</p></div>
+        <div class="lp-benefit"><h4 data-i18n="lp_benefit2_t">Colaborações</h4><p data-i18n="lp_benefit2_p">Oportunidades de parceria e intercâmbio com outras orquestras.</p></div>
+        <div class="lp-benefit"><h4 data-i18n="lp_benefit3_t">Aprimoramento</h4><p data-i18n="lp_benefit3_p">Informações para o aprimoramento de diversos segmentos da instituição.</p></div>
+        <div class="lp-benefit"><h4 data-i18n="lp_benefit4_t">Conteúdo específico</h4><p data-i18n="lp_benefit4_p">Material e pesquisa dedicados à realidade dos grupos sinfônicos.</p></div>
+        <div class="lp-benefit"><h4 data-i18n="lp_benefit5_t">Grupos de trabalho</h4><p data-i18n="lp_benefit5_p">GTs de profissionais específicos de orquestra, entre outras frentes.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AGENDA 2030 -->
+  <section class="lp-section" id="lp-agenda">
+    <div class="container lp-narrow">
+      <h2 class="lp-title" data-i18n="lp_agenda_title">Agenda 2030</h2>
+      <div class="lp-divider"></div>
+      <div class="lp-ods-badge"><span data-i18n="lp_agenda_badge">18º ODS · Cultura</span></div>
+      <p data-i18n="lp_agenda_p1">A Agenda 2030 é um plano de ação para as pessoas, o planeta e a prosperidade, firmado pelo Brasil e outros 192 países da ONU por meio de 17 Objetivos de Desenvolvimento Sustentável (ODS).</p>
+      <p data-i18n="lp_agenda_p2">No Brasil, foi incorporado um 18º ODS, que reconhece a cultura como pilar essencial do desenvolvimento sustentável — destacando o papel das expressões culturais na preservação da memória, na diversidade e na transformação social.</p>
+      <p data-i18n="lp_agenda_p3">Ao promoverem acesso à cultura, à educação e à inclusão social, as orquestras e instituições culturais contribuem para uma sociedade mais justa, igualitária e sustentável.</p>
+      <p class="lp-source"><a href="https://gtagenda2030.org.br/ods/" target="_blank" rel="noopener"><span data-i18n="lp_source">Fonte</span>: GT Agenda 2030 ↗</a></p>
+    </div>
+  </section>
+
+  <!-- CADASTRO (os 3 perfis → onboarding) -->
+  <section class="lp-section lp-alt" id="lp-cadastro">
+    <div class="container">
+      <h2 class="lp-title" data-i18n="lp_join_title">Faça parte do COB</h2>
+      <div class="lp-divider"></div>
+      <p class="lp-section-sub" data-i18n="home_choose_sub">Escolha a categoria que melhor representa o seu interesse.</p>
+      <div class="category-grid">
+        <div class="category-card" onclick="startCategory('embaixador')">
+          <div class="cat-icon">★</div>
+          <div class="cat-title" data-i18n="cat_emb_title">Embaixador(a)</div>
+          <div class="cat-desc" data-i18n="cat_emb_desc">Represente o COB e amplie permanentemente nosso alcance nas redes, conectando pessoas e instituições.</div>
+          <div class="cat-arrow" data-i18n="cat_start">Iniciar →</div>
+        </div>
+        <div class="category-card" onclick="startCategory('representante')">
+          <div class="cat-icon">♪</div>
+          <div class="cat-title" data-i18n="cat_rep_title">Representante de Orquestra</div>
+          <div class="cat-desc" data-i18n="cat_rep_desc">Cadastre sua orquestra na rede e participe de iniciativas colaborativas de gestão e formação.</div>
+          <div class="cat-arrow" data-i18n="cat_start">Iniciar →</div>
+        </div>
+        <div class="category-card" onclick="startCategory('voluntario')">
+          <div class="cat-icon">♥</div>
+          <div class="cat-title" data-i18n="cat_vol_title">Voluntário(a)</div>
+          <div class="cat-desc" data-i18n="cat_vol_desc">Some seu talento ao trabalho dos GTs do COB. Há frentes para diversos perfis profissionais.</div>
+          <div class="cat-arrow" data-i18n="cat_start">Iniciar →</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEJA UM AMIGO DO COB -->
+  <section class="lp-section" id="lp-apoie">
+    <div class="container">
+      <h2 class="lp-title" data-i18n="lp_friend_title">Seja um Amigo do COB</h2>
+      <div class="lp-divider"></div>
+      <p class="lp-section-sub" data-i18n="lp_friend_sub">Sua contribuição sustenta uma rede 100% construída em regime colaborativo. Escolha como apoiar:</p>
+      <div class="lp-plans">
+        <div class="lp-plan">
+          <div class="lp-plan-name" data-i18n="lp_plan1_name">Amigo Entusiasta</div>
+          <div class="lp-plan-price">R$ 20<span data-i18n="lp_per_month">/mês</span></div>
+          <p class="lp-plan-desc" data-i18n="lp_plan1_desc">Estudantes, músicos e público geral. Selo digital "Amigo do COB" e nome na página de apoiadores.</p>
+          <button class="btn-outline-s lp-plan-btn" onclick="abrirApoio('Amigo Entusiasta','R$ 20/mês')" data-i18n="lp_support">Apoiar</button>
+        </div>
+        <div class="lp-plan lp-plan-feat">
+          <div class="lp-plan-tag" data-i18n="lp_plan_highlight">Mais escolhido</div>
+          <div class="lp-plan-name" data-i18n="lp_plan2_name">Amigo Mantenedor</div>
+          <div class="lp-plan-price">R$ 50<span data-i18n="lp_per_month">/mês</span></div>
+          <p class="lp-plan-desc" data-i18n="lp_plan2_desc">Profissionais e admiradores da causa. Tudo do anterior + acesso antecipado a e-books, pesquisas e gravações dos GTs.</p>
+          <button class="btn-silver lp-plan-btn" onclick="abrirApoio('Amigo Mantenedor','R$ 50/mês')" data-i18n="lp_support">Apoiar</button>
+        </div>
+        <div class="lp-plan">
+          <div class="lp-plan-name" data-i18n="lp_plan3_name">Patrono da Rede</div>
+          <div class="lp-plan-price">R$ 150<span data-i18n="lp_per_month">/mês</span></div>
+          <p class="lp-plan-desc" data-i18n="lp_plan3_desc">Líderes, instituições e benfeitores. Tudo do anterior + convite ao Encontro Virtual Anual de Planejamento com a coordenação.</p>
+          <button class="btn-outline-s lp-plan-btn" onclick="abrirApoio('Patrono da Rede','R$ 150/mês')" data-i18n="lp_support">Apoiar</button>
+        </div>
+        <div class="lp-plan">
+          <div class="lp-plan-name" data-i18n="lp_plan4_name">Apoio Pontual</div>
+          <div class="lp-plan-price lp-plan-price-free" data-i18n="lp_plan4_price">Valor livre</div>
+          <p class="lp-plan-desc" data-i18n="lp_plan4_desc">Para quem prefere contribuir esporadicamente via Pix (a partir de R$ 10). Nome no mural de agradecimento da temporada.</p>
+          <button class="btn-outline-s lp-plan-btn" onclick="abrirApoio('Apoio Pontual','Pix — valor livre')" data-i18n="lp_support_pix">Apoiar via Pix</button>
+        </div>
+      </div>
+      <p class="lp-friend-note" data-i18n="lp_friend_note">As cobranças recorrentes automáticas (cartão/Pix) serão ativadas assim que a conta institucional oficial do COB estiver configurada.</p>
+    </div>
+  </section>
+
+  <!-- RECURSOS & VAGAS -->
+  <section class="lp-section lp-alt" id="lp-recursos">
+    <div class="container">
+      <h2 class="lp-title" data-i18n="lp_resources_title">Recursos & Oportunidades</h2>
+      <div class="lp-divider"></div>
+      <div class="lp-res-grid">
+        <div class="lp-res-card">
+          <div class="lp-res-icon">📚</div>
+          <h3 data-i18n="lp_ebooks_t">Recursos Educacionais</h3>
+          <p data-i18n="lp_ebooks_p">E-books e materiais desenvolvidos especialmente para orquestras.</p>
+          <a class="btn-outline-s" href="https://www.canva.com/design/DAGJtz-STPM/2JYxgmIWLpyN8EdE7owWeQ/view" target="_blank" rel="noopener" data-i18n="lp_ebooks_btn">Acessar e-books ↗</a>
+        </div>
+        <div class="lp-res-card">
+          <div class="lp-res-icon">🎼</div>
+          <h3 data-i18n="lp_jobs_t">Vagas & Editais</h3>
+          <p data-i18n="lp_jobs_p">Editais, oportunidades e projetos de orquestras que fazem a diferença.</p>
+          <a class="btn-outline-s" href="https://drive.google.com/drive/folders/1nwou1GyrOiYLcxlaO2KSKSYmz4dTFUCy?usp=sharing" target="_blank" rel="noopener" data-i18n="lp_jobs_btn">Ver vagas ↗</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RODAPÉ INSTITUCIONAL -->
+  <footer class="lp-footer" id="lp-contato">
+    <div class="container lp-footer-grid">
+      <div>
+        <div class="lp-footer-brand">COB</div>
+        <p class="lp-footer-tag" data-i18n="lp_footer_tag">A arte de unir pela música.</p>
+      </div>
+      <div>
+        <h4 data-i18n="lp_footer_contact">Contato</h4>
+        <p><a href="mailto:orquestrasbrasileiras@gmail.com">orquestrasbrasileiras@gmail.com</a></p>
+      </div>
+      <div>
+        <h4 data-i18n="lp_footer_social">Redes sociais</h4>
+        <div class="lp-social">
+          <a href="https://www.instagram.com/orquestrasbr/" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+          <a href="https://www.linkedin.com/company/conectando-orquestras-brasileiras/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M4.98 3.5a2 2 0 11-.02 4 2 2 0 01.02-4zM3 8.5h4V21H3zM9 8.5h3.8v1.7h.05c.53-1 1.82-2.05 3.75-2.05C20.4 8.15 21 10.1 21 13v8h-4v-7c0-1.67-.03-3.8-2.3-3.8-2.3 0-2.65 1.8-2.65 3.67V21H9z"/></svg></a>
+          <a href="https://linktr.ee/orquestrasbr" target="_blank" rel="noopener" aria-label="Linktree"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M5 7l7 5 7-5M5 14l7 5 7-5"/></svg></a>
+          <a href="https://www.youtube.com/channel/UC6H6IbeDM5X9h0JjqljnGnw" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 00-1.76-1.77C19.33 5.1 12 5.1 12 5.1s-7.33 0-8.84.43A2.5 2.5 0 001.4 7.3C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 001.76 1.77C4.67 18.9 12 18.9 12 18.9s7.33 0 8.84-.43a2.5 2.5 0 001.76-1.77C23 15.2 23 12 23 12zM9.75 15.02V8.98L15.5 12z"/></svg></a>
+        </div>
+      </div>
+    </div>
+    <div class="lp-footer-bottom">
+      <span>© 2026 COB — Conectando Orquestras Brasileiras.</span>
+      <span class="lp-footer-made" data-i18n="lp_footer_made">Plataforma por Opus AI / Studio Kephra</span>
+    </div>
+  </footer>
+
 </section>
 
 <!-- ============================================================
@@ -1591,7 +1942,8 @@ const DETAILS_FIELDS = {
     {id:'apelido',          labelKey:'d_apelido',          type:'text',   req:false, phKey:'d_opcional'},
     {id:'aniversario',      labelKey:'d_aniversario',      type:'choice', req:true,  optsKey:['opt_sim','opt_nao']},
     {id:'data_aniversario', labelKey:'d_data_aniversario', type:'date',   req:false},
-    {id:'parabenizar',      labelKey:'d_parabenizar',      type:'choice', req:false, optsKey:['opt_sim','opt_nao']}
+    {id:'parabenizar',      labelKey:'d_parabenizar',      type:'choice', req:false, optsKey:['opt_sim','opt_nao']},
+    {id:'canal_lembrete',   labelKey:'d_canal_lembrete',   type:'choice', req:false, optsKey:['opt_canal_email','opt_canal_whats','opt_canal_ambos']}
   ],
   representante: [
     {id:'cidade',     labelKey:'d_cidade',  type:'text', req:true},
@@ -1639,6 +1991,42 @@ const I18N = {
     cat_rep_title:"Representante de Orquestra", cat_rep_desc:"Cadastre sua orquestra na rede e participe de iniciativas colaborativas de gestão e formação.",
     cat_vol_title:"Voluntário(a)", cat_vol_desc:"Some seu talento ao trabalho dos GTs do COB. Há frentes para diversos perfis profissionais.",
     cat_start:"Iniciar →",
+    lp_nav_about:"Sobre", lp_nav_benefits:"Benefícios", lp_nav_join:"Cadastro", lp_nav_support:"Apoie",
+    lp_hero_title:"Conectando Orquestras Brasileiras", lp_hero_sub:"Uma rede colaborativa dedicada a fortalecer a gestão e o intercâmbio entre os grupos sinfônicos de todo o país.",
+    lp_cta_know:"Conheça o COB", lp_cta_join:"Faça parte →",
+    lp_about_title:"Sobre o COB",
+    lp_about_p1:"O COB é uma iniciativa dedicada a fomentar a colaboração entre orquestras de todo o país, visando estabelecer uma rede colaborativa.",
+    lp_about_p2:"Nosso propósito é facilitar o intercâmbio de conhecimentos, materiais e técnicas relacionadas à gestão de grupos sinfônicos, promovendo uma administração mais coesa e eficaz.",
+    lp_about_p3:"Por meio dessa parceria, o COB busca desenvolver, em conjunto com as orquestras, ferramentas e estratégias que contribuam para uma gestão mais eficiente e sustentável dessas instituições.",
+    lp_video_title:"Vídeo Institucional",
+    lp_mvv_title:"Missão, Visão e Valores",
+    lp_mission:"Missão", lp_mission_p:"Promover a interlocução entre orquestras brasileiras para fortalecer o cenário musical nacional por meio da colaboração e do intercâmbio cultural.",
+    lp_vision:"Visão", lp_vision_p:"Ser reconhecido por cooperar com a inovação das práticas de gestão dos grupos sinfônicos brasileiros.",
+    lp_values:"Valores", lp_values_p:"Colaboração, diálogo permanente, articulação cultural, compromisso social e conhecimento.",
+    lp_benefits_title:"Benefícios da Rede COB", lp_benefits_sub:"Ao integrar o COB, seu grupo passa a contar com:",
+    lp_benefit1_t:"Maior visibilidade", lp_benefit1_p:"Ampliação de alcance através das nossas redes sociais e eventos.",
+    lp_benefit2_t:"Colaborações", lp_benefit2_p:"Oportunidades de parceria e intercâmbio com outras orquestras.",
+    lp_benefit3_t:"Aprimoramento", lp_benefit3_p:"Informações para o aprimoramento de diversos segmentos da instituição.",
+    lp_benefit4_t:"Conteúdo específico", lp_benefit4_p:"Material e pesquisa dedicados à realidade dos grupos sinfônicos.",
+    lp_benefit5_t:"Grupos de trabalho", lp_benefit5_p:"GTs de profissionais específicos de orquestra, entre outras frentes.",
+    lp_agenda_title:"Agenda 2030", lp_agenda_badge:"18º ODS · Cultura",
+    lp_agenda_p1:"A Agenda 2030 é um plano de ação para as pessoas, o planeta e a prosperidade, firmado pelo Brasil e outros 192 países da ONU por meio de 17 Objetivos de Desenvolvimento Sustentável (ODS).",
+    lp_agenda_p2:"No Brasil, foi incorporado um 18º ODS, que reconhece a cultura como pilar essencial do desenvolvimento sustentável — destacando o papel das expressões culturais na preservação da memória, na diversidade e na transformação social.",
+    lp_agenda_p3:"Ao promoverem acesso à cultura, à educação e à inclusão social, as orquestras e instituições culturais contribuem para uma sociedade mais justa, igualitária e sustentável.",
+    lp_source:"Fonte",
+    lp_join_title:"Faça parte do COB",
+    lp_friend_title:"Seja um Amigo do COB", lp_friend_sub:"Sua contribuição sustenta uma rede 100% construída em regime colaborativo. Escolha como apoiar:",
+    lp_per_month:"/mês", lp_support:"Apoiar", lp_support_pix:"Apoiar via Pix", lp_plan_highlight:"Mais escolhido",
+    lp_plan1_name:"Amigo Entusiasta", lp_plan1_desc:"Estudantes, músicos e público geral. Selo digital \"Amigo do COB\" e nome na página de apoiadores.",
+    lp_plan2_name:"Amigo Mantenedor", lp_plan2_desc:"Profissionais e admiradores da causa. Tudo do anterior + acesso antecipado a e-books, pesquisas e gravações dos GTs.",
+    lp_plan3_name:"Patrono da Rede", lp_plan3_desc:"Líderes, instituições e benfeitores. Tudo do anterior + convite ao Encontro Virtual Anual de Planejamento com a coordenação.",
+    lp_plan4_name:"Apoio Pontual", lp_plan4_price:"Valor livre", lp_plan4_desc:"Para quem prefere contribuir esporadicamente via Pix (a partir de R$ 10). Nome no mural de agradecimento da temporada.",
+    lp_friend_note:"As cobranças recorrentes automáticas (cartão/Pix) serão ativadas assim que a conta institucional oficial do COB estiver configurada.",
+    apoio_pix_label:"Chave Pix (e-mail) do COB:", apoio_copy:"COPIAR", apoio_note:"Assim que a conta institucional oficial for configurada, o pagamento recorrente automático (cartão/Pix) ficará disponível aqui mesmo.",
+    lp_resources_title:"Recursos & Oportunidades",
+    lp_ebooks_t:"Recursos Educacionais", lp_ebooks_p:"E-books e materiais desenvolvidos especialmente para orquestras.", lp_ebooks_btn:"Acessar e-books ↗",
+    lp_jobs_t:"Vagas & Editais", lp_jobs_p:"Editais, oportunidades e projetos de orquestras que fazem a diferença.", lp_jobs_btn:"Ver vagas ↗",
+    lp_footer_tag:"A arte de unir pela música.", lp_footer_contact:"Contato", lp_footer_social:"Redes sociais", lp_footer_made:"Plataforma por Opus AI / Studio Kephra",
     about_mini_t:"Sobre o COB", about_mini_p:"Iniciativa dedicada a fomentar a colaboração entre orquestras brasileiras, facilitando o intercâmbio de conhecimentos, materiais e técnicas de gestão.", about_mini_btn:"Saiba mais →",
     about_h1:"Sobre o COB", about_lead:"A arte de unir pela música.",
     about_what_t:"O que é", about_what_p:"O Projeto COB – Conectando Orquestras Brasileiras é uma iniciativa dedicada a fomentar a colaboração entre orquestras de todo o país, visando estabelecer uma rede colaborativa. O propósito é facilitar o intercâmbio de conhecimentos, materiais e técnicas relacionadas à gestão de grupos sinfônicos, promovendo uma administração mais coesa e eficaz.",
@@ -1682,6 +2070,7 @@ const I18N = {
     d_experiencia:"Comente sobre sua experiência em orquestras e sua expectativa/motivação no COB",
     d_dores:"Pontos a serem desenvolvidos ou \"dores\" do projeto/organização que você faz parte", d_dores_ph:"Ex.: falta de recursos, captação, abertura de CNPJ, equipe reduzida...",
     d_palestrar:"Teria interesse em palestrar em algum de nossos encontros?",
+    d_canal_lembrete:"Como prefere receber lembretes de divulgação do COB?", opt_canal_email:"E-mail", opt_canal_whats:"WhatsApp", opt_canal_ambos:"Ambos",
     d_outro_ph:"Especifique...",
     opt_area_com:"Comunicação", opt_area_arq:"Arquivo / Documentação", opt_area_gest:"Gestão", opt_area_pesq:"Pesquisa", opt_area_design:"Design / Audiovisual",
     opt_carga_2:"Até 2h por semana", opt_carga_24:"2 a 4h por semana", opt_carga_46:"4 a 6h por semana", opt_carga_6:"Mais de 6h por semana",
@@ -1717,6 +2106,42 @@ const I18N = {
     cat_rep_title:"Orchestra Representative", cat_rep_desc:"Register your orchestra in the network and join collaborative management and training initiatives.",
     cat_vol_title:"Volunteer", cat_vol_desc:"Bring your talent to COB working groups. There are tracks for many professional profiles.",
     cat_start:"Start →",
+    lp_nav_about:"About", lp_nav_benefits:"Benefits", lp_nav_join:"Join", lp_nav_support:"Support",
+    lp_hero_title:"Connecting Brazilian Orchestras", lp_hero_sub:"A collaborative network dedicated to strengthening the management and exchange among symphonic groups across the country.",
+    lp_cta_know:"Discover the COB", lp_cta_join:"Join us →",
+    lp_about_title:"About the COB",
+    lp_about_p1:"The COB is an initiative dedicated to fostering collaboration among orchestras across the country, building a collaborative network.",
+    lp_about_p2:"Our purpose is to facilitate the exchange of knowledge, materials and techniques related to the management of symphonic groups, promoting more cohesive and effective administration.",
+    lp_about_p3:"Through this partnership, the COB seeks to develop, together with orchestras, tools and strategies for a more efficient and sustainable management of these institutions.",
+    lp_video_title:"Institutional Video",
+    lp_mvv_title:"Mission, Vision & Values",
+    lp_mission:"Mission", lp_mission_p:"To foster dialogue among Brazilian orchestras, strengthening the national music scene through collaboration and cultural exchange.",
+    lp_vision:"Vision", lp_vision_p:"To be recognized for contributing to innovation in the management practices of Brazilian symphonic groups.",
+    lp_values:"Values", lp_values_p:"Collaboration, ongoing dialogue, cultural articulation, social commitment and knowledge.",
+    lp_benefits_title:"Benefits of the COB Network", lp_benefits_sub:"By joining the COB, your group gains access to:",
+    lp_benefit1_t:"Greater visibility", lp_benefit1_p:"Expanded reach through our social media and events.",
+    lp_benefit2_t:"Collaborations", lp_benefit2_p:"Opportunities for partnership and exchange with other orchestras.",
+    lp_benefit3_t:"Improvement", lp_benefit3_p:"Insights to improve various areas of the institution.",
+    lp_benefit4_t:"Specific content", lp_benefit4_p:"Material and research dedicated to the reality of symphonic groups.",
+    lp_benefit5_t:"Working groups", lp_benefit5_p:"Working groups of orchestra professionals, among other fronts.",
+    lp_agenda_title:"Agenda 2030", lp_agenda_badge:"18th SDG · Culture",
+    lp_agenda_p1:"Agenda 2030 is an action plan for people, the planet and prosperity, signed by Brazil and 192 other UN countries through 17 Sustainable Development Goals (SDGs).",
+    lp_agenda_p2:"In Brazil, an 18th SDG was added, recognizing culture as an essential pillar of sustainable development — highlighting the role of cultural expression in preserving memory, diversity and social transformation.",
+    lp_agenda_p3:"By promoting access to culture, education and social inclusion, orchestras and cultural institutions contribute to a fairer, more equal and more sustainable society.",
+    lp_source:"Source",
+    lp_join_title:"Join the COB",
+    lp_friend_title:"Become a Friend of the COB", lp_friend_sub:"Your contribution sustains a network built entirely on collaboration. Choose how to support:",
+    lp_per_month:"/mo", lp_support:"Support", lp_support_pix:"Support via Pix", lp_plan_highlight:"Most chosen",
+    lp_plan1_name:"Enthusiast Friend", lp_plan1_desc:"Students, musicians and the general public. Digital \"Friend of the COB\" badge and your name on the supporters page.",
+    lp_plan2_name:"Sustaining Friend", lp_plan2_desc:"Professionals and admirers of the cause. Everything above + early access to e-books, research and GT recordings.",
+    lp_plan3_name:"Network Patron", lp_plan3_desc:"Leaders, institutions and benefactors. Everything above + an invitation to the Annual Virtual Planning Meeting with the coordination.",
+    lp_plan4_name:"One-time Support", lp_plan4_price:"Any amount", lp_plan4_desc:"For those who prefer to contribute occasionally via Pix (from R$ 10). Your name on the season's wall of thanks.",
+    lp_friend_note:"Automatic recurring billing (card/Pix) will be enabled as soon as the COB's official institutional account is set up.",
+    apoio_pix_label:"COB Pix key (email):", apoio_copy:"COPY", apoio_note:"Once the official institutional account is configured, automatic recurring payment (card/Pix) will be available right here.",
+    lp_resources_title:"Resources & Opportunities",
+    lp_ebooks_t:"Educational Resources", lp_ebooks_p:"E-books and materials developed especially for orchestras.", lp_ebooks_btn:"Open e-books ↗",
+    lp_jobs_t:"Jobs & Calls", lp_jobs_p:"Calls, opportunities and orchestra projects that make a difference.", lp_jobs_btn:"View openings ↗",
+    lp_footer_tag:"The art of uniting through music.", lp_footer_contact:"Contact", lp_footer_social:"Social media", lp_footer_made:"Platform by Opus AI / Studio Kephra",
     about_mini_t:"About COB", about_mini_p:"An initiative devoted to fostering collaboration between Brazilian orchestras by facilitating exchange of knowledge, materials and management techniques.", about_mini_btn:"Learn more →",
     about_h1:"About COB", about_lead:"The art of uniting through music.",
     about_what_t:"What it is", about_what_p:"Project COB – Connecting Brazilian Orchestras is an initiative devoted to fostering collaboration among orchestras across the country, building a collaborative network. Its purpose is to facilitate exchange of knowledge, materials and management techniques for symphonic groups, promoting more cohesive and effective administration.",
@@ -1760,6 +2185,7 @@ const I18N = {
     d_experiencia:"Tell us about your experience with orchestras and your expectations/motivation regarding COB.",
     d_dores:"Share some of the challenges or \"pain points\" of your project/organization", d_dores_ph:"E.g.: lack of human/financial resources, fundraising, opening a nonprofit entity, small team...",
     d_palestrar:"Would you be interested in giving a talk at one of our events?",
+    d_canal_lembrete:"How would you prefer to receive COB outreach reminders?", opt_canal_email:"Email", opt_canal_whats:"WhatsApp", opt_canal_ambos:"Both",
     d_outro_ph:"Please specify...",
     opt_area_com:"Communications", opt_area_arq:"Archive / Documentation", opt_area_gest:"Management", opt_area_pesq:"Research", opt_area_design:"Design / Audiovisual",
     opt_carga_2:"Up to 2h per week", opt_carga_24:"2 to 4h per week", opt_carga_46:"4 to 6h per week", opt_carga_6:"More than 6h per week",
@@ -1795,6 +2221,42 @@ const I18N = {
     cat_rep_title:"Representante de Orquesta", cat_rep_desc:"Registre su orquesta en la red y participe de iniciativas colaborativas de gestión y formación.",
     cat_vol_title:"Voluntario(a)", cat_vol_desc:"Sume su talento al trabajo de los GT del COB. Hay frentes para diversos perfiles profesionales.",
     cat_start:"Iniciar →",
+    lp_nav_about:"Acerca", lp_nav_benefits:"Beneficios", lp_nav_join:"Registro", lp_nav_support:"Apoya",
+    lp_hero_title:"Conectando Orquestas Brasileñas", lp_hero_sub:"Una red colaborativa dedicada a fortalecer la gestión y el intercambio entre los grupos sinfónicos de todo el país.",
+    lp_cta_know:"Conozca el COB", lp_cta_join:"Participe →",
+    lp_about_title:"Acerca del COB",
+    lp_about_p1:"El COB es una iniciativa dedicada a fomentar la colaboración entre orquestas de todo el país, estableciendo una red colaborativa.",
+    lp_about_p2:"Nuestro propósito es facilitar el intercambio de conocimientos, materiales y técnicas relacionadas con la gestión de grupos sinfónicos, promoviendo una administración más cohesionada y eficaz.",
+    lp_about_p3:"Mediante esta alianza, el COB busca desarrollar, junto con las orquestas, herramientas y estrategias para una gestión más eficiente y sostenible de estas instituciones.",
+    lp_video_title:"Video Institucional",
+    lp_mvv_title:"Misión, Visión y Valores",
+    lp_mission:"Misión", lp_mission_p:"Promover la interlocución entre orquestas brasileñas para fortalecer el escenario musical nacional mediante la colaboración y el intercambio cultural.",
+    lp_vision:"Visión", lp_vision_p:"Ser reconocido por cooperar con la innovación de las prácticas de gestión de los grupos sinfónicos brasileños.",
+    lp_values:"Valores", lp_values_p:"Colaboración, diálogo permanente, articulación cultural, compromiso social y conocimiento.",
+    lp_benefits_title:"Beneficios de la Red COB", lp_benefits_sub:"Al integrar el COB, su grupo contará con:",
+    lp_benefit1_t:"Mayor visibilidad", lp_benefit1_p:"Ampliación del alcance a través de nuestras redes sociales y eventos.",
+    lp_benefit2_t:"Colaboraciones", lp_benefit2_p:"Oportunidades de alianza e intercambio con otras orquestas.",
+    lp_benefit3_t:"Perfeccionamiento", lp_benefit3_p:"Información para mejorar diversos segmentos de la institución.",
+    lp_benefit4_t:"Contenido específico", lp_benefit4_p:"Material e investigación dedicados a la realidad de los grupos sinfónicos.",
+    lp_benefit5_t:"Grupos de trabajo", lp_benefit5_p:"GT de profesionales específicos de orquesta, entre otros frentes.",
+    lp_agenda_title:"Agenda 2030", lp_agenda_badge:"18º ODS · Cultura",
+    lp_agenda_p1:"La Agenda 2030 es un plan de acción para las personas, el planeta y la prosperidad, firmado por Brasil y otros 192 países de la ONU mediante 17 Objetivos de Desarrollo Sostenible (ODS).",
+    lp_agenda_p2:"En Brasil se incorporó un 18º ODS, que reconoce la cultura como pilar esencial del desarrollo sostenible, destacando el papel de las expresiones culturales en la preservación de la memoria, la diversidad y la transformación social.",
+    lp_agenda_p3:"Al promover el acceso a la cultura, la educación y la inclusión social, las orquestas e instituciones culturales contribuyen a una sociedad más justa, igualitaria y sostenible.",
+    lp_source:"Fuente",
+    lp_join_title:"Participe en el COB",
+    lp_friend_title:"Sé un Amigo del COB", lp_friend_sub:"Tu aporte sostiene una red construida 100% de forma colaborativa. Elige cómo apoyar:",
+    lp_per_month:"/mes", lp_support:"Apoyar", lp_support_pix:"Apoyar vía Pix", lp_plan_highlight:"Más elegido",
+    lp_plan1_name:"Amigo Entusiasta", lp_plan1_desc:"Estudiantes, músicos y público general. Sello digital \"Amigo del COB\" y tu nombre en la página de apoyadores.",
+    lp_plan2_name:"Amigo Mantenedor", lp_plan2_desc:"Profesionales y admiradores de la causa. Todo lo anterior + acceso anticipado a e-books, investigaciones y grabaciones de los GT.",
+    lp_plan3_name:"Patrono de la Red", lp_plan3_desc:"Líderes, instituciones y benefactores. Todo lo anterior + invitación al Encuentro Virtual Anual de Planificación con la coordinación.",
+    lp_plan4_name:"Apoyo Puntual", lp_plan4_price:"Monto libre", lp_plan4_desc:"Para quienes prefieren contribuir esporádicamente vía Pix (desde R$ 10). Tu nombre en el muro de agradecimiento de la temporada.",
+    lp_friend_note:"Los cobros recurrentes automáticos (tarjeta/Pix) se activarán en cuanto la cuenta institucional oficial del COB esté configurada.",
+    apoio_pix_label:"Clave Pix (correo) del COB:", apoio_copy:"COPIAR", apoio_note:"En cuanto la cuenta institucional oficial esté configurada, el pago recurrente automático (tarjeta/Pix) estará disponible aquí mismo.",
+    lp_resources_title:"Recursos y Oportunidades",
+    lp_ebooks_t:"Recursos Educativos", lp_ebooks_p:"E-books y materiales desarrollados especialmente para orquestas.", lp_ebooks_btn:"Acceder a e-books ↗",
+    lp_jobs_t:"Vacantes y Convocatorias", lp_jobs_p:"Convocatorias, oportunidades y proyectos de orquestas que marcan la diferencia.", lp_jobs_btn:"Ver vacantes ↗",
+    lp_footer_tag:"El arte de unir por la música.", lp_footer_contact:"Contacto", lp_footer_social:"Redes sociales", lp_footer_made:"Plataforma por Opus AI / Studio Kephra",
     about_mini_t:"Sobre el COB", about_mini_p:"Iniciativa dedicada a fomentar la colaboración entre orquestas brasileñas, facilitando el intercambio de conocimientos, materiales y técnicas de gestión.", about_mini_btn:"Saber más →",
     about_h1:"Sobre el COB", about_lead:"El arte de unir a través de la música.",
     about_what_t:"Qué es", about_what_p:"El Proyecto COB – Conectando Orquestas Brasileñas es una iniciativa dedicada a fomentar la colaboración entre orquestas de todo el país, buscando establecer una red colaborativa. El propósito es facilitar el intercambio de conocimientos, materiales y técnicas relacionadas con la gestión de grupos sinfónicos, promoviendo una administración más cohesiva y eficaz.",
@@ -1838,6 +2300,7 @@ const I18N = {
     d_experiencia:"Cuéntenos sobre su experiencia en orquestas y su expectativa/motivación respecto al COB.",
     d_dores:"Comparta los puntos a desarrollar o \"dificultades\" del proyecto/organización del cual forma parte", d_dores_ph:"Ej.: falta de recursos humanos/financieros, captación de fondos, apertura de una entidad, equipo reducido...",
     d_palestrar:"¿Le interesaría dar una charla en alguno de nuestros encuentros?",
+    d_canal_lembrete:"¿Cómo prefiere recibir los recordatorios de difusión del COB?", opt_canal_email:"Correo", opt_canal_whats:"WhatsApp", opt_canal_ambos:"Ambos",
     d_outro_ph:"Especifique...",
     opt_area_com:"Comunicación", opt_area_arq:"Archivo / Documentación", opt_area_gest:"Gestión", opt_area_pesq:"Investigación", opt_area_design:"Diseño / Audiovisual",
     opt_carga_2:"Hasta 2h por semana", opt_carga_24:"2 a 4h por semana", opt_carga_46:"4 a 6h por semana", opt_carga_6:"Más de 6h por semana",
@@ -1897,8 +2360,33 @@ function navigate(routeId) {
   window.scrollTo({top:0, behavior:'smooth'});
   // Esconde hamburguer fora do dashboard
   document.getElementById('hamburger').style.display = (routeId === 'dashboard') ? 'inline-flex' : 'none';
+  // Links institucionais só aparecem na landing (home)
+  const lpLinks = document.getElementById('lpNavLinks');
+  if (lpLinks) lpLinks.style.display = (routeId === 'home') ? '' : 'none';
   // No dashboard, garantir que carregamos os dados
   if (routeId === 'dashboard') loadDashboard();
+}
+
+// ============================================================
+// LANDING PAGE — helpers
+// ============================================================
+function lpScroll(id) {
+  if (!document.getElementById('route-home').classList.contains('active')) navigate('home');
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function abrirApoio(plano, valor) {
+  document.getElementById('apoioPlano').textContent = plano + ' · ' + valor;
+  document.getElementById('apoioModal').classList.add('show');
+}
+function fecharApoio() { document.getElementById('apoioModal').classList.remove('show'); }
+function copiarPix(btn) {
+  const pix = document.getElementById('apoioPix').textContent.trim();
+  const done = () => { const o = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = o, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(pix).then(done).catch(() => { toast(pix); });
+  } else { toast(pix); }
 }
 
 // ============================================================
