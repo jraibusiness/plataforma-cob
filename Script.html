@@ -1368,4 +1368,51 @@ document.addEventListener('click', function(e) {
   }
 });
 
+/* ============================================================
+   REFINAMENTO UI/UX (não altera a lógica): logo, haptics, animações
+   ============================================================ */
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  function logoSrc(){ var b=document.querySelector('.brand-logo'); return b?b.src:''; }
+
+  function injectLogos(){
+    var src=logoSrc(); if(!src) return;
+    var heroWrap=document.querySelector('.web-hero .container-web');
+    if(heroWrap && !heroWrap.querySelector('.hero-logo')){
+      var img=document.createElement('img'); img.className='hero-logo'; img.src=src; img.alt='COB';
+      heroWrap.insertBefore(img, heroWrap.firstChild);
+    }
+    var fcol=document.querySelector('.web-footer .footer-col');
+    if(fcol && !fcol.querySelector('.footer-logo')){
+      var f=document.createElement('img'); f.className='footer-logo'; f.src=src; f.alt='COB';
+      fcol.insertBefore(f, fcol.firstChild);
+    }
+    document.querySelectorAll('#route-success .success-card, #route-login-email .login-card, #route-login-code .login-card').forEach(function(card){
+      if(!card.querySelector('.card-logo')){
+        var c=document.createElement('img'); c.className='card-logo'; c.src=src; c.alt='COB';
+        card.insertBefore(c, card.firstChild);
+      }
+    });
+  }
+
+  function setupReveal(){
+    if(reduce || !('IntersectionObserver' in window)) return;
+    document.body.classList.add('anim-ready');
+    document.querySelectorAll('.web-section').forEach(function(s){ s.classList.add('reveal'); });
+    document.querySelectorAll('.values-grid,.benefits-grid,.plans-grid,.category-grid').forEach(function(g){ g.classList.add('reveal-stagger'); });
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+    },{threshold:.12});
+    document.querySelectorAll('.reveal,.reveal-stagger').forEach(function(el){ io.observe(el); });
+  }
+
+  function haptic(ms){ try{ if(!reduce && navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+  document.addEventListener('click', function(e){
+    var el=e.target.closest && e.target.closest('.chip,.slot-item,.category-card,.tab,.plan-btn,.btn,.action-btn,.nav-btn,.lang-switcher button');
+    if(el) haptic((el.classList.contains('chip')||el.classList.contains('slot-item'))?12:8);
+  }, true);
+
+  function boot(){ injectLogos(); setupReveal(); }
+  if(document.readyState!=='loading') boot(); else window.addEventListener('DOMContentLoaded', boot);
+})();
 </script>

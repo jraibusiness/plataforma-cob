@@ -452,4 +452,55 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   .pix-box button { width: 100%; }
 }
 
+/* ============================================================
+   REFINAMENTO UI/UX — prata/dourado, logo, animações, transições
+   ============================================================ */
+:root{ --silver:#C0C0C0; --silver-2:#E0E0E0; --gold:#C9A227; --gold-soft:#E6C65B; }
+
+/* Cores: filete prata→dourado sob os títulos de seção */
+.web-section-title{ position:relative; padding-bottom:16px; }
+.web-section-title::after{ content:''; position:absolute; left:50%; transform:translateX(-50%); bottom:0;
+  width:66px; height:2px; border-radius:2px; background:linear-gradient(90deg,var(--silver),var(--gold)); }
+.plan-featured{ border-color:var(--gold)!important;
+  box-shadow:0 0 0 1px rgba(201,162,39,.35), 0 16px 42px rgba(0,0,0,.5)!important; }
+.plan-featured .featured-badge, .plan-featured .plan-price{ color:var(--gold-soft)!important; }
+.category-card:hover .cat-icon{ background:var(--pink); color:var(--bg); transform:rotate(-8deg) scale(1.08); }
+.cat-icon{ transition:transform .3s cubic-bezier(.2,.8,.2,1), background .3s, color .3s; }
+
+/* Logo */
+.hero-logo{ display:block; width:92px; height:92px; margin:0 auto 22px; object-fit:contain;
+  filter:drop-shadow(0 6px 22px rgba(232,180,188,.22)); animation:cobFloat 6s ease-in-out infinite; }
+.footer-logo{ width:44px; height:44px; object-fit:contain; margin-bottom:12px; opacity:.95; }
+.card-logo{ width:56px; height:56px; object-fit:contain; margin:0 auto 16px; display:block; opacity:.95; }
+@keyframes cobFloat{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+
+/* Transições e micro-interações */
+.btn,.action-btn,.nav-btn,.category-card,.plan-card,.value-card,.benefit-item,.chip,.slot-item,.tab{
+  transition:all .28s cubic-bezier(.2,.8,.2,1); }
+.btn:active,.category-card:active,.chip:active,.slot-item:active,.plan-btn:active,.action-btn:active{ transform:scale(.97); }
+.btn-primary{ box-shadow:0 6px 18px rgba(232,180,188,.18); }
+.btn-primary:hover{ box-shadow:0 10px 26px rgba(232,180,188,.3); transform:translateY(-2px); }
+.value-card:hover,.plan-card:hover{ transform:translateY(-5px); }
+
+/* Revelação por scroll (ativada quando o JS adiciona .anim-ready) */
+.anim-ready .reveal{ opacity:0; transform:translateY(26px); }
+.anim-ready .reveal.in{ opacity:1; transform:none; transition:opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+.anim-ready .reveal-stagger>*{ opacity:0; transform:translateY(22px); }
+.anim-ready .reveal-stagger.in>*{ opacity:1; transform:none; transition:opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1); }
+.anim-ready .reveal-stagger.in>*:nth-child(2){ transition-delay:.08s }
+.anim-ready .reveal-stagger.in>*:nth-child(3){ transition-delay:.16s }
+.anim-ready .reveal-stagger.in>*:nth-child(4){ transition-delay:.24s }
+.anim-ready .reveal-stagger.in>*:nth-child(5){ transition-delay:.32s }
+
+/* Entrada do hero */
+.anim-ready .web-hero .hero-title{ animation:cobIn .8s ease .1s both; }
+.anim-ready .web-hero .hero-sub{ animation:cobIn .8s ease .2s both; }
+.anim-ready .web-hero .hero-ctas{ animation:cobIn .8s ease .3s both; }
+@keyframes cobIn{ from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+
+@media (prefers-reduced-motion:reduce){
+  .hero-logo{ animation:none!important }
+  .anim-ready .reveal,.anim-ready .reveal-stagger>*{ opacity:1!important; transform:none!important }
+  .anim-ready .web-hero *{ animation:none!important }
+}
 </style>
