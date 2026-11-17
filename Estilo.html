@@ -313,7 +313,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   .cfg-grid{grid-template-columns:1fr}
 }
 @media (max-width:720px){
-  .hero-logo{width:120px;height:120px;margin-bottom:20px}
   .dash-table thead{display:none}
   .dash-table tr{display:block;margin-bottom:14px;border:1px solid var(--border);border-radius:var(--radius-s);
     padding:8px;background:var(--card)}
@@ -378,7 +377,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .hidden{display:none !important}
 
 /* ============================================================
-   SEÇÃO "SEJA UM AMIGO DO COB"
+   HOME · seção de cadastro
    ============================================================ */
 .container-web { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 24px; }
 
@@ -391,32 +390,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 
 
 /* PLANOS AMIGO DO COB */
-.plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 40px; align-items: stretch; }
-.plan-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-m); padding: 32px 24px; display: flex; flex-direction: column; position: relative; transition: all .3s ease; }
-.plan-card:hover { transform: translateY(-5px); border-color: var(--pink); box-shadow: 0 12px 35px rgba(0,0,0,0.45); }
-.plan-featured { border-color: var(--pink); background: linear-gradient(135deg, rgba(22,58,44,0.95) 0%, rgba(18,38,32,0.95) 100%); box-shadow: 0 0 25px rgba(232,180,188,0.15); }
-.plan-badge { display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-mute); margin-bottom: 8px; }
-.featured-badge { color: var(--pink); font-weight: 700; }
-.plan-name { font-family: var(--font-display); font-size: 1.6rem; color: var(--text); margin: 0 0 14px; }
-.plan-price { font-size: 2.2rem; font-weight: 700; color: #FFF; font-family: var(--font-display); margin-bottom: 12px; }
-.plan-price span { font-size: 0.9rem; font-weight: 400; color: var(--text-mute); font-family: var(--font-body); }
-.plan-desc { font-size: 0.9rem; color: var(--text-mute); margin: 0 0 20px; min-height: 42px; line-height: 1.5; }
-.plan-perks { list-style: none; padding: 0; margin: 0 0 28px; flex-grow: 1; font-size: 0.88rem; color: var(--text); line-height: 1.8; }
-.plan-perks li { margin-bottom: 8px; }
-.plan-btn { flex: 0 0 auto; width: 100%; min-height: 48px; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.8rem; letter-spacing: 1px; cursor: pointer; }
-
-.pix-box { background: rgba(18,38,32,0.6); border: 1px dashed var(--pink); border-radius: var(--radius-m); padding: 24px 28px; margin-top: 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px; }
-.pix-info h4 { margin: 0 0 4px; font-family: var(--font-display); font-size: 1.3rem; color: var(--pink); }
-.pix-info p { margin: 0; color: var(--text-mute); font-size: 0.9rem; }
-.btn-outline { background: transparent; border: 1px solid var(--pink); color: var(--pink); padding: 12px 24px; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.8rem; letter-spacing: 1px; cursor: pointer; transition: all .2s; }
-.btn-outline:hover { background: var(--pink); color: var(--bg); }
 
 
 
-@media (max-width: 768px) {
-  .pix-box { flex-direction: column; text-align: center; }
-  .pix-box button { width: 100%; }
-}
+
 
 /* ============================================================
    REFINAMENTO UI/UX — prata/dourado, logo, animações, transições
@@ -427,15 +404,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .web-section-title{ position:relative; padding-bottom:16px; }
 .web-section-title::after{ content:''; position:absolute; left:50%; transform:translateX(-50%); bottom:0;
   width:66px; height:2px; border-radius:2px; background:linear-gradient(90deg,var(--silver),var(--gold)); }
-.plan-featured{ border-color:var(--gold)!important;
-  box-shadow:0 0 0 1px rgba(201,162,39,.35), 0 16px 42px rgba(0,0,0,.5)!important; }
-.plan-featured .featured-badge, .plan-featured .plan-price{ color:var(--gold-soft)!important; }
 .category-card:hover .cat-icon{ background:var(--pink); color:var(--bg); transform:rotate(-8deg) scale(1.08); }
 .cat-icon{ transition:transform .3s cubic-bezier(.2,.8,.2,1), background .3s, color .3s; }
 
+.home-cadastro{ border-top:none; padding:18px 0 60px; }
+.home-cadastro .web-section-title{ display:block; }
+
 /* Logo */
-.hero-logo{ display:block; width:150px; height:150px; margin:0 auto 26px; object-fit:contain;
-  filter:drop-shadow(0 6px 22px rgba(232,180,188,.18)); animation:cobFloat 6s ease-in-out infinite; }
 .card-logo{ width:56px; height:56px; object-fit:contain; margin:0 auto 16px; display:block; opacity:.95; }
 @keyframes cobFloat{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
 
@@ -445,7 +420,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .btn:active,.category-card:active,.chip:active,.slot-item:active,.plan-btn:active,.action-btn:active{ transform:scale(.97); }
 .btn-primary{ box-shadow:0 6px 18px rgba(232,180,188,.18); }
 .btn-primary:hover{ box-shadow:0 10px 26px rgba(232,180,188,.3); transform:translateY(-2px); }
-.plan-card:hover{ transform:translateY(-5px); }
 
 /* Revelação por scroll (ativada quando o JS adiciona .anim-ready) */
 .anim-ready .reveal{ opacity:0; transform:translateY(26px); }
@@ -458,14 +432,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .anim-ready .reveal-stagger.in>*:nth-child(5){ transition-delay:.32s }
 
 /* Entrada do hero */
-.anim-ready #route-home .hero>*{ animation:cobIn .8s ease both; }
-.anim-ready #route-home .hero>*:nth-child(2){ animation-delay:.1s }
-.anim-ready #route-home .hero>*:nth-child(3){ animation-delay:.2s }
-.anim-ready #route-home .hero-logo{ animation:cobIn .8s ease both, cobFloat 6s ease-in-out .8s infinite; }
 @keyframes cobIn{ from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
 
 @media (prefers-reduced-motion:reduce){
-  .hero-logo{ animation:none!important }
   .anim-ready .reveal,.anim-ready .reveal-stagger>*{ opacity:1!important; transform:none!important }
 }
 </style>

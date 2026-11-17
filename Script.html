@@ -1266,44 +1266,6 @@ window.addEventListener('DOMContentLoaded', function(){
 });
 
 
-/* Modal de Apoio / Seja um Amigo do COB */
-function abrirApoioModal(plano, valor) {
-  var tit = $('acaoTitulo');
-  var txt = $('acaoTexto');
-  var campos = $('acaoCampos');
-  if(!tit || !txt || !campos) return;
-
-  tit.textContent = "SEJA UM AMIGO DO COB · " + plano.toUpperCase();
-  var valorTxt = valor > 0 ? "R$ " + valor + ",00 / mês" : "Contribuição Avulsa";
-  txt.innerHTML = "Plano selecionado: <b>" + plano + " (" + valorTxt + ")</b>.<br><br>"
-                + "O COB está finalizando a ativação da sua conta institucional no Asaas para processar cobranças recorrentes automáticas.<br><br>"
-                + "Para contribuir agora via Pix oficial do projeto:<br>"
-                + "<code style='background:rgba(255,255,255,0.1);padding:6px 10px;border-radius:4px;display:inline-block;margin:8px 0;color:var(--pink);'>orquestrasbrasileiras@gmail.com</code><br>"
-                + "<small style='color:var(--text-mute);'>Favorecido: Projeto COB · Conectando Orquestras Brasileiras</small>";
-
-  campos.innerHTML = "";
-  var modal = $('acaoModal');
-  if(modal) modal.classList.add('show');
-
-  var btnOk = $('acaoOk');
-  var btnCancel = $('acaoCancelar');
-  btnOk.textContent = "COPIAR CHAVE PIX";
-  btnCancel.textContent = "FECHAR";
-
-  btnOk.onclick = function() {
-    if(navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText("orquestrasbrasileiras@gmail.com");
-      toast("Chave Pix copiada com sucesso!");
-    } else {
-      toast("Chave Pix: orquestrasbrasileiras@gmail.com");
-    }
-    modal.classList.remove('show');
-  };
-  btnCancel.onclick = function() {
-    modal.classList.remove('show');
-  };
-}
-
 /* Modal de Preferências do Embaixador (Modo Pausa) */
 function abrirPreferenciaEmbaixador(idEmbaixador) {
   var tit = $('acaoTitulo');
@@ -1374,7 +1336,7 @@ function abrirPreferenciaEmbaixador(idEmbaixador) {
     if(reduce || !('IntersectionObserver' in window)) return;
     document.body.classList.add('anim-ready');
     document.querySelectorAll('.web-section').forEach(function(s){ s.classList.add('reveal'); });
-    document.querySelectorAll('.plans-grid').forEach(function(g){ g.classList.add('reveal-stagger'); });
+    document.querySelectorAll('.category-grid').forEach(function(g){ g.classList.add('reveal-stagger'); });
     var io=new IntersectionObserver(function(es){
       es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
     },{threshold:.12});
