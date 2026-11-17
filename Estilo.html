@@ -313,6 +313,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   .cfg-grid{grid-template-columns:1fr}
 }
 @media (max-width:720px){
+  .hero-logo{width:120px;height:120px;margin-bottom:20px}
   .dash-table thead{display:none}
   .dash-table tr{display:block;margin-bottom:14px;border:1px solid var(--border);border-radius:var(--radius-s);
     padding:8px;background:var(--card)}
@@ -377,40 +378,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .hidden{display:none !important}
 
 /* ============================================================
-   ESTILOS PORTAL INSTITUCIONAL COB (BRAND KIT OPUS AI)
+   SEÇÃO "SEJA UM AMIGO DO COB"
    ============================================================ */
 .container-web { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 24px; }
-.web-hero { padding: 90px 0 60px; text-align: center; background: radial-gradient(circle at 50% 30%, rgba(45,90,61,0.22) 0%, rgba(10,24,18,0) 70%); }
-.hero-title { font-family: var(--font-display); font-size: clamp(2.4rem, 6vw, 3.8rem); font-weight: 700; margin: 0 0 20px; line-height: 1.15; letter-spacing: 1px; }
-.hero-title em { color: var(--pink); font-style: italic; font-weight: 500; }
-.hero-sub { font-size: 1.15rem; color: var(--text-mute); max-width: 680px; margin: 0 auto 32px; line-height: 1.7; }
-.hero-ctas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 
 .web-section { padding: 75px 0; border-top: 1px solid var(--border); }
 .web-section.bg-alt { background: rgba(15, 42, 32, 0.45); }
 .web-section-title { font-family: var(--font-display); font-size: 2.2rem; text-align: center; color: var(--pink); margin: 0 0 16px; letter-spacing: 2px; }
 
-.about-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: center; margin-top: 36px; }
-.about-text p { font-size: 1.05rem; line-height: 1.8; color: var(--text); margin-bottom: 18px; text-align: justify; }
-.about-visual { display: flex; justify-content: center; align-items: center; }
-.about-badge { width: 180px; height: 180px; border-radius: 50%; border: 2px solid var(--pink); display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(18,38,32,0.85); box-shadow: 0 0 30px rgba(232,180,188,0.18); }
-.about-badge-symbol { font-family: 'Cinzel', serif; font-size: 2.4rem; font-weight: 700; color: #FFF; letter-spacing: 2px; }
-.about-badge-text { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; color: var(--pink); margin-top: 4px; text-align: center; }
 
-.video-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: var(--radius-m); border: 1px solid var(--border); box-shadow: 0 12px 40px rgba(0,0,0,0.5); margin-top: 30px; }
-.video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
 
-.values-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 40px; }
-.value-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-m); padding: 32px 24px; text-align: center; transition: all .3s ease; }
-.value-card:hover { transform: translateY(-4px); border-color: var(--pink); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-.value-badge { font-size: 2.2rem; color: var(--pink); margin-bottom: 12px; }
-.value-card h3 { font-family: var(--font-display); font-size: 1.45rem; color: var(--text); margin: 0 0 12px; }
-.value-card p { font-size: 0.95rem; color: var(--text-mute); line-height: 1.6; margin: 0; }
 
-.benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 36px; }
-.benefit-item { background: var(--card); border-left: 4px solid var(--pink); border-radius: var(--radius-s); padding: 22px 20px; }
-.benefit-item h4 { font-family: var(--font-display); font-size: 1.25rem; color: var(--pink); margin: 0 0 8px; }
-.benefit-item p { font-size: 0.9rem; color: var(--text-mute); line-height: 1.5; margin: 0; }
 
 /* PLANOS AMIGO DO COB */
 .plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 40px; align-items: stretch; }
@@ -425,7 +403,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .plan-desc { font-size: 0.9rem; color: var(--text-mute); margin: 0 0 20px; min-height: 42px; line-height: 1.5; }
 .plan-perks { list-style: none; padding: 0; margin: 0 0 28px; flex-grow: 1; font-size: 0.88rem; color: var(--text); line-height: 1.8; }
 .plan-perks li { margin-bottom: 8px; }
-.plan-btn { width: 100%; min-height: 48px; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.8rem; letter-spacing: 1px; cursor: pointer; }
+.plan-btn { flex: 0 0 auto; width: 100%; min-height: 48px; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.8rem; letter-spacing: 1px; cursor: pointer; }
 
 .pix-box { background: rgba(18,38,32,0.6); border: 1px dashed var(--pink); border-radius: var(--radius-m); padding: 24px 28px; margin-top: 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px; }
 .pix-info h4 { margin: 0 0 4px; font-family: var(--font-display); font-size: 1.3rem; color: var(--pink); }
@@ -433,21 +411,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .btn-outline { background: transparent; border: 1px solid var(--pink); color: var(--pink); padding: 12px 24px; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.8rem; letter-spacing: 1px; cursor: pointer; transition: all .2s; }
 .btn-outline:hover { background: var(--pink); color: var(--bg); }
 
-.ods-box { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--pink); border-radius: var(--radius-s); padding: 26px 28px; margin-top: 24px; font-size: 1rem; line-height: 1.8; color: var(--text); }
-.ods-box p:last-child { margin-bottom: 0; }
 
-.web-footer { background: #07100c; padding: 60px 0 30px; border-top: 1px solid var(--border); }
-.footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 36px; margin-bottom: 40px; }
-.footer-col h3 { font-family: var(--font-display); font-size: 1.35rem; color: var(--pink); margin: 0 0 16px; letter-spacing: 1px; }
-.footer-col p { margin: 0 0 8px; font-size: 0.92rem; color: var(--text-mute); }
-.footer-col a { color: var(--text); text-decoration: none; transition: color .2s; }
-.footer-col a:hover { color: var(--pink); }
-.social-links { display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem; }
-.footer-copy { text-align: center; border-top: 1px solid var(--border); padding-top: 24px; font-size: 0.8rem; color: var(--text-mute); }
 
 @media (max-width: 768px) {
-  .about-grid { grid-template-columns: 1fr; }
-  .about-visual { order: -1; }
   .pix-box { flex-direction: column; text-align: center; }
   .pix-box button { width: 100%; }
 }
@@ -468,9 +434,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .cat-icon{ transition:transform .3s cubic-bezier(.2,.8,.2,1), background .3s, color .3s; }
 
 /* Logo */
-.hero-logo{ display:block; width:92px; height:92px; margin:0 auto 22px; object-fit:contain;
-  filter:drop-shadow(0 6px 22px rgba(232,180,188,.22)); animation:cobFloat 6s ease-in-out infinite; }
-.footer-logo{ width:44px; height:44px; object-fit:contain; margin-bottom:12px; opacity:.95; }
+.hero-logo{ display:block; width:150px; height:150px; margin:0 auto 26px; object-fit:contain;
+  filter:drop-shadow(0 6px 22px rgba(232,180,188,.18)); animation:cobFloat 6s ease-in-out infinite; }
 .card-logo{ width:56px; height:56px; object-fit:contain; margin:0 auto 16px; display:block; opacity:.95; }
 @keyframes cobFloat{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
 
@@ -480,7 +445,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .btn:active,.category-card:active,.chip:active,.slot-item:active,.plan-btn:active,.action-btn:active{ transform:scale(.97); }
 .btn-primary{ box-shadow:0 6px 18px rgba(232,180,188,.18); }
 .btn-primary:hover{ box-shadow:0 10px 26px rgba(232,180,188,.3); transform:translateY(-2px); }
-.value-card:hover,.plan-card:hover{ transform:translateY(-5px); }
+.plan-card:hover{ transform:translateY(-5px); }
 
 /* Revelação por scroll (ativada quando o JS adiciona .anim-ready) */
 .anim-ready .reveal{ opacity:0; transform:translateY(26px); }
@@ -493,14 +458,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .anim-ready .reveal-stagger.in>*:nth-child(5){ transition-delay:.32s }
 
 /* Entrada do hero */
-.anim-ready .web-hero .hero-title{ animation:cobIn .8s ease .1s both; }
-.anim-ready .web-hero .hero-sub{ animation:cobIn .8s ease .2s both; }
-.anim-ready .web-hero .hero-ctas{ animation:cobIn .8s ease .3s both; }
+.anim-ready #route-home .hero>*{ animation:cobIn .8s ease both; }
+.anim-ready #route-home .hero>*:nth-child(2){ animation-delay:.1s }
+.anim-ready #route-home .hero>*:nth-child(3){ animation-delay:.2s }
+.anim-ready #route-home .hero-logo{ animation:cobIn .8s ease both, cobFloat 6s ease-in-out .8s infinite; }
 @keyframes cobIn{ from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
 
 @media (prefers-reduced-motion:reduce){
   .hero-logo{ animation:none!important }
   .anim-ready .reveal,.anim-ready .reveal-stagger>*{ opacity:1!important; transform:none!important }
-  .anim-ready .web-hero *{ animation:none!important }
 }
 </style>
